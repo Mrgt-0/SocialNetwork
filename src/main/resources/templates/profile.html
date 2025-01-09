@@ -1,25 +1,37 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="ru">
 <head>
-    <title>Профиль</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя</title>
 </head>
 <body>
-<h1>Профиль</h1>
-<form th:action="@{/profile}" th:object="${user}" method="post">
-    <label>Имя пользователя:</label>
-    <body>
-    <label>
-        <input type="text" th:field="*{userName}" required>
-    </label>
-    <br>
-    <label>Email:</label>
-    <label>
-        <input type="email" th:field="*{email}" required>
-    </label>
-    <br>
-    <div th:if="${emailExists}" th:text="${emailExists}"></div>
-    </body>
-</form>
-<div th:if="${emailExists}" th:text="${emailExists}"></div>
+
+<h1>Профиль пользователя</h1>
+<div id="user-info" class="user-info">
+    <!-- Здесь будет отображена информация о пользователе -->
+</div>
+<button class="button" id="edit-button" onclick="showEditForm()">Редактировать</button>
+
+<div id="edit-form">
+    <h2>Редактировать профиль</h2>
+    <label for="userName">Имя пользователя:</label>
+    <input type="text" id="userName" /><br />
+
+    <label for="firstName">Имя:</label>
+    <input type="text" id="firstName" /><br />
+
+    <label for="lastName">Фамилия:</label>
+    <input type="text" id="lastName" /><br />
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" /><br />
+
+    <label for="profilePicture">Изображение профиля:</label>
+    <input type="text" id="profilePicture" /><br />
+
+    <button class="button" id="save-button" onclick="saveUser()">Сохранить</button>
+    <button class="button" id="cancel-button" onclick="cancelEdit()">Отменить</button>
+</div>
 </body>
 </html>

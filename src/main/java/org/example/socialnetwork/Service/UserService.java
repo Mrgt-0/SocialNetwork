@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.beans.Transient;
 import java.util.Optional;
 
 @Service
@@ -26,8 +25,14 @@ public class UserService {
 //        this.userRepository = userRepository;
 //    }
 
-    public User findUser(int userId) {
+    public User findUserById(int userId) {
         return userRepository.getById(userId);
+    }
+
+    public Optional<User> findByUserName(String userName) { return userRepository.findByUserName(userName); }
+
+    public Optional<User> findByEmail(String email){
+        return userRepository.findByEmail(email);
     }
 
     public void saveUser(User user) throws SystemException {
@@ -36,29 +41,40 @@ public class UserService {
         }catch (Exception e){
             logger.error("Ошибка при сохранении пользователя.", e.getMessage());
         }
-
-    }
-
-    public User findByEmail(String emain){   //ПЕРЕДЕЛАТЬ!!!
-        User user=new User();
-        return user;
     }
 
     @Transactional
-    public User updateUser(User user) throws SystemException {
-        try {
-            logger.info("Информация о пользователи обновлена.");
-            return userRepository.save(user);
-        }catch (Exception e){
-            logger.error("Ошибка при обновлении данных пользователя.", e.getMessage());
-            return null;
+    public User updateUser(Integer id, User updatedUser) throws SystemException {
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setUserName(updatedUser.getUserName());
+                    user.setFirstName(updatedUser.getFirstName());
+                    user.setLastName(updatedUser.getLastName());
+                    user.setEmail(updatedUser.getEmail());
+                    user.setProfilePicture(updatedUser.getProfilePicture());
+                    return userRepository.save(user);
+                })
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    @Transactional
+    public User registerUser(User user) throws SystemException {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            logger.error("Пользователь с таким email уже существует.");
+            return null; // или выбросьте исключение
         }
-    }
 
-    @Transactional
-    public User registerUser(User user) throws SystemException { //логирование
+        if (userRepository.findByUserName(user.getUserName()).isPresent()) {
+            logger.error("Пользователь с таким именем пользователя уже существует.");
+            return null; // или выбросьте исключение
+        }
+
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         return userRepository.save(user);
+//        }catch (Exception e){
+//            logger.error("Произошла ошибка при регистрации пользователя.", e.getMessage());
+//            return null;
+//        }
     }
 
     @Transactional
