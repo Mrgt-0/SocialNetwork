@@ -4,12 +4,17 @@ import jakarta.transaction.SystemException;
 import jakarta.validation.Valid;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
 
@@ -19,25 +24,25 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Integer id) {
         Optional<User> user = Optional.ofNullable(userService.findUserById(id));
-        if (user.isPresent()) {
+        if (user.isPresent())
             return ResponseEntity.ok(user.get());
-        } else {
+        else
             return ResponseEntity.notFound().build();
-        }
     }
 
     // Получение пользователя по имени пользователя
     @GetMapping("/username/{username}")
     public ResponseEntity<User> getUserByUserName(@PathVariable("username") String userName) {
         Optional<User> user = userService.findByUserName(userName);
-        if (user.isPresent()) {
+        if (user.isPresent())
             return ResponseEntity.ok(user.get());
-        } else {
+         else
             return ResponseEntity.notFound().build();
-        }
     }
 
     @GetMapping("/register")
@@ -48,40 +53,46 @@ public class UserController {
 
     @PostMapping("/register")
     public String registerUser(@Valid @ModelAttribute("user") User user,
-                               BindingResult bindingResult, Model model) throws SystemException {
+                               BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) throws SystemException {
         if (bindingResult.hasErrors()) {
+            logger.error("Ошибки валидации: " + bindingResult.getAllErrors());
             return "register"; // Вернуться к форме, если есть ошибки
         }
 
-        if (userService.findByEmail(user.getEmail()) != null) {
+        if (userService.findByEmail(user.getEmail()).isPresent()) {
             model.addAttribute("emailExists", "Email уже используется.");
             return "register"; // Вернуться к форме, если email уже существует
         }
-
-        if (userService.findByUserName(user.getUserName()) != null){
+        if (userService.findByUserName(user.getUserName()).isPresent()) {
             model.addAttribute("usernameExists", "Имя уже используется.");
             return "register";
         }
 
         userService.registerUser(user);
-        return "redirect:/login"; // Перенаправление пользователя на страницу входа
+        redirectAttributes.addFlashAttribute("successMessage", "Регистрация прошла успешно! Пожалуйста, войдите.");
+        return "redirect:/users/login"; // Перенаправление пользователя на страницу входа
+    }
+
+    @GetMapping("/login")
+    public String showLoginForm(Model model) {
+        model.addAttribute("user", new User());
+        return "login"; // Шаблон для входа
     }
 
     @GetMapping("/profile")
     public String showProfileForm(Model model) {
-        // Получите текущего пользователя (например, из session)
-        Optional<User> user = userService.findByEmail("user@example.com"); // Пример получения пользователя
-        model.addAttribute("user", user);
-        return "profile"; // Шаблон для редактирования профиля
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserName = auth.getName();
+        Optional<User> user = userService.findByUserName(currentUserName); // Получаем текущего пользователя
+        user.ifPresent(u -> model.addAttribute("user", u)); // Добавляем пользователя в модель
+        return "profile";
     }
 
     @PostMapping("/profile")
-    public ResponseEntity<User> updateProfile(@PathVariable Integer id, @RequestBody User updatedUser) {
-        try {
-            User user = userService.updateUser(id, updatedUser);
-            return ResponseEntity.ok(user);
-        } catch (RuntimeException | SystemException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public String updateProfile(@ModelAttribute User updatedUser) throws SystemException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserName = auth.getName(); // Получаем текущее имя пользователя
+        userService.updateUser(currentUserName, updatedUser); // Обновляем пользователя на основе имени
+        return "redirect:/profile";
     }
 }

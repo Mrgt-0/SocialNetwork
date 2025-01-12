@@ -34,8 +34,8 @@ public class UserServiceTest {
     @BeforeEach
     public void setUp() {
         user = new User();
-        user.setUserName("user");
-        user.setEmail("test@example.com");
+        user.setUserName("Mark");
+        user.setEmail("Zucerberg");
         user.setPasswordHash("password123"); // Не хешированный пароль для теста
     }
 

@@ -4,6 +4,7 @@ import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.UserRepository;
+import org.example.socialnetwork.Status.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +22,6 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-//    public UserService(UserRepository userRepository) {
-//        this.userRepository = userRepository;
-//    }
-
     public User findUserById(int userId) {
         return userRepository.getById(userId);
     }
@@ -38,14 +35,15 @@ public class UserService {
     public void saveUser(User user) throws SystemException {
         try{
             userRepository.save(user);
+            logger.info("Пользователь успешно сохранен.");
         }catch (Exception e){
             logger.error("Ошибка при сохранении пользователя.", e.getMessage());
         }
     }
 
     @Transactional
-    public User updateUser(Integer id, User updatedUser) throws SystemException {
-        return userRepository.findById(id)
+    public User updateUser(String userName, User updatedUser) throws SystemException {
+        return userRepository.findByUserName(userName) // Изменено
                 .map(user -> {
                     user.setUserName(updatedUser.getUserName());
                     user.setFirstName(updatedUser.getFirstName());
@@ -70,11 +68,10 @@ public class UserService {
         }
 
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-        return userRepository.save(user);
-//        }catch (Exception e){
-//            logger.error("Произошла ошибка при регистрации пользователя.", e.getMessage());
-//            return null;
-//        }
+        user.setRole(Role.ROLE_USER);
+        User registredUser = userRepository.save(user);
+        logger.info("Пользователь успешно зарегистрирован.");
+        return registredUser;
     }
 
     @Transactional

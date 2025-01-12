@@ -15,12 +15,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Отключение защиты CSRF (при необходимости)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers( "/login",  "/users/register", "/users/profile").permitAll() // Разрешите доступ к этим URL
-                        .anyRequest().authenticated() // Любой другой запрос требует аутентификации
+                        .requestMatchers("/users/login", "/users/register", "/users/profile", "/posts/postCreater").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/users/login")
+                        .defaultSuccessUrl("/users/profile", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/users/login")
                 );
-
         return http.build();
     }
 

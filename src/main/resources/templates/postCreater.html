@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Публичное сообщение</title>
+</head>
+<body>
+<h1>Регистрация</h1>
+<form th:action="@{/posts}" th:object="${post}" method="post">
+    <body>
+    <label>Имя:</label>
+    <label>
+        <input type="text" th:field="*{text}" required>
+    </label>
+    <br>
+    <label>Изображение:</label>
+    <label>
+        <input type="text" th:field="*{image}" required>
+    </label>
+    <button type="submit">Опубликовать</button>
+    </body>
+</form>
+</body>
+</html>

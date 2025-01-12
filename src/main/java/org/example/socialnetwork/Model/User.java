@@ -3,7 +3,9 @@ package org.example.socialnetwork.Model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
+import org.example.socialnetwork.Status.Role;
 
+import java.awt.*;
 import java.time.LocalDate;
 
 @Entity
@@ -30,18 +32,18 @@ public class User {
     @Email(message = "Некорректный формат email")
     private String email;
 
-    @Column(name ="birthdate", nullable = false)
+    @Column(name ="birthdate", nullable = true)
     private LocalDate birthdate;
 
-    @Column(name = "profile_picture")
+    @Column(name = "profile_picture", nullable = true)
     private String profilePicture;
 
     @Column(name = "user_role", nullable = false)
-    private String role;
+    private Role role;
 
     public User() {}
 
-    public User(String userName, String firstName, String lastName, String passwordHash, String email, LocalDate birthdate, String profilePicture, String role) {
+    public User(String userName, String firstName, String lastName, String passwordHash, String email, LocalDate birthdate, String profilePicture, Role role) {
         this.userName = userName;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -99,4 +101,8 @@ public class User {
     }
 
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
+
+    public Role getRole() { return role; }
+
+    public void setRole(Role role) { this.role=role; }
 }
