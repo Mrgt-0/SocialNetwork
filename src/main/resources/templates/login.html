@@ -5,14 +5,18 @@
 </head>
 <body>
 <h1>Вход</h1>
-<form th:action="@{/users/login}" th:object="${user}" method="post">
-  <label>Логин:</label>
-  <input type="text" th:field="*{userName}" required>
+<form th:action="@{/users/login}" method="post">
+  <label for="userName">Логин:</label>
+  <input type="text" id="userName" name="userName" required autocomplete="username">
   <br>
-  <label>Пароль:</label>
-  <input type="password" th:field="*{passwordHash}" required>
+  <label for="password">Пароль:</label>
+  <input type="password" id="password" name="password" required autocomplete="current-password">
   <br>
+  <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
   <button type="submit">Войти</button>
+  <div th:if="${errorMessage}">
+    <p style="color:red;" th:text="${errorMessage}"></p>
+  </div>
 </form>
 </body>
 </html>

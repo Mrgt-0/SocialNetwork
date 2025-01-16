@@ -3,10 +3,10 @@ package org.example.socialnetwork.Model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-import org.example.socialnetwork.Status.Role;
 
-import java.awt.*;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -26,7 +26,7 @@ public class User {
 
     @Column(name ="password_hash", nullable = false)
     @Size(min = 8, message = "Пароль должен содержать минимум 8 символов")
-    private String passwordHash;
+    private String password;
 
     @Column(name ="email", nullable = false)
     @Email(message = "Некорректный формат email")
@@ -38,16 +38,18 @@ public class User {
     @Column(name = "profile_picture", nullable = true)
     private String profilePicture;
 
-    @Column(name = "user_role", nullable = false)
-    private Role role;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "user_role")
+    private Set<String> role = new HashSet<>();
 
     public User() {}
 
-    public User(String userName, String firstName, String lastName, String passwordHash, String email, LocalDate birthdate, String profilePicture, Role role) {
+    public User(String userName, String firstName, String lastName, String password, String email, LocalDate birthdate, String profilePicture, Set<String> role) {
         this.userName = userName;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.passwordHash = passwordHash;
+        this.password = password;
         this.email = email;
         this.birthdate = birthdate;
         this.profilePicture = profilePicture;
@@ -76,12 +78,12 @@ public class User {
 
     public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getPassword() {
+        return password;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getEmail() {
@@ -102,7 +104,7 @@ public class User {
 
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
 
-    public Role getRole() { return role; }
+    public Set<String> getRole() { return role; }
 
-    public void setRole(Role role) { this.role=role; }
+    public void setRole(Set<String> role) { this.role=role; }
 }

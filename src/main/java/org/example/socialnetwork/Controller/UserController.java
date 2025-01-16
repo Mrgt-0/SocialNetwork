@@ -24,7 +24,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Integer id) {
@@ -73,8 +73,27 @@ public class UserController {
         return "redirect:/users/login"; // Перенаправление пользователя на страницу входа
     }
 
+    @PostMapping("/login")
+    public String login(@RequestParam(required = false) String userName, @RequestParam(required = false) String password, Model model) {
+        logger.info("Пользователь пытается войти: {}", userName);
+        logger.info("Метод login вызван");
+        boolean isAuthenticated = userService.authenticateUser(userName, password);
+        logger.info("Аутентификация прошла: {}", isAuthenticated);
+        if (isAuthenticated) {
+            // Вход успешный
+            logger.info("Пользователь {} успешно вошел в систему.", userName);
+            return "redirect:/users/profile"; // или перенаправьте на другую страницу
+        } else {
+            // Неверные учетные данные
+            model.addAttribute("errorMessage", "Неверное имя пользователя или пароль.");
+            logger.warn("Неудачная попытка входа для пользователя {}.", userName);
+            return "login"; // возврат на страницу входа
+        }
+    }
+
     @GetMapping("/login")
     public String showLoginForm(Model model) {
+        logger.info("Пользователь открывает страницу логина.");
         model.addAttribute("user", new User());
         return "login"; // Шаблон для входа
     }

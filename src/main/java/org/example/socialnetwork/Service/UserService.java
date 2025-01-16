@@ -4,23 +4,27 @@ import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.UserRepository;
-import org.example.socialnetwork.Status.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 
 @Service
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired // Внедрение через конструктор
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public User findUserById(int userId) {
         return userRepository.getById(userId);
@@ -30,6 +34,21 @@ public class UserService {
 
     public Optional<User> findByEmail(String email){
         return userRepository.findByEmail(email);
+    }
+
+    @Transactional
+    public boolean authenticateUser(String userName, String password) {
+        logger.info("Аутентификация пользователя '{}'", userName);
+        Optional<User> userOptional = userRepository.findByUserName(userName);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            // Используем passwordEncoder для сравнения
+            return passwordEncoder.matches(password, user.getPassword());
+        } else {
+            logger.error("Пользователь с именем {} не найден.", userName);
+            return false; // или бросьте исключение, если это необходимо
+        }
     }
 
     public void saveUser(User user) throws SystemException {
@@ -42,8 +61,8 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUser(String userName, User updatedUser) throws SystemException {
-        return userRepository.findByUserName(userName) // Изменено
+    public void updateUser(String userName, User updatedUser) throws SystemException {
+        userRepository.findByUserName(userName) // Изменено
                 .map(user -> {
                     user.setUserName(updatedUser.getUserName());
                     user.setFirstName(updatedUser.getFirstName());
@@ -67,8 +86,13 @@ public class UserService {
             return null; // или выбросьте исключение
         }
 
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-        user.setRole(Role.ROLE_USER);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole(new HashSet<>(Collections.singleton("USER")));
+            logger.info("Пользователь: " + user);
+            logger.info("Роли перед сохранением: " + user.getRole());
+        }
+
         User registredUser = userRepository.save(user);
         logger.info("Пользователь успешно зарегистрирован.");
         return registredUser;
