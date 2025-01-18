@@ -1,52 +1,22 @@
-package org.example.socialnetwork.Model;
-
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
+package org.example.socialnetwork.DTO;
 
 import java.time.LocalDate;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserDTO {
     private Long userId;
-
-    @Column(name = "user_name", nullable = false)
     private String userName;
-
-    @Column(name ="first_name", nullable = false)
     private String firstName;
-
-    @Column(name ="last_name", nullable = false)
     private String lastName;
-
-    @Column(name ="password_hash", nullable = false)
-    @Size(min = 8, message = "Пароль должен содержать минимум 8 символов")
     private String password;
-
-    @Column(name ="email", nullable = false)
-    @Email(message = "Некорректный формат email")
     private String email;
-
-    @Column(name ="birthdate", nullable = true)
     private LocalDate birthdate;
-
-    @Column(name = "profile_picture", nullable = true)
     private String profilePicture;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "user_role")
     private Set<String> role;
 
-    public User() {}
-
-    public User(String userName, String firstName, String lastName, String password, String email, LocalDate birthdate, String profilePicture, Set<String> role) {
+    public UserDTO(Long userId, String userName, String firstName, String lastName, String password, String email, LocalDate birthdate, String profilePicture, Set<String> role){
+        this.userId=userId;
         this.userName = userName;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -56,7 +26,6 @@ public class User {
         this.profilePicture = profilePicture;
         this.role = role;
     }
-
     public Long getUserId() { return userId; }
 
     public void setUserId(Long userId) { this.userId=userId; }
@@ -106,7 +75,7 @@ public class User {
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
 
     public Set<String> getRole() {
-        return role != null ? role : Collections.emptySet(); // вернуть пустое множество, если роль null
+        return role != null ? role : Collections.emptySet();
     }
 
     public void setRole(Set<String> role) { this.role=role; }
