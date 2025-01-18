@@ -11,7 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 
 @Service
@@ -20,7 +19,7 @@ public class UserService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
 
-    @Autowired // Внедрение через конструктор
+    @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -36,21 +35,6 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    @Transactional
-    public boolean authenticateUser(String userName, String password) {
-        logger.info("Аутентификация пользователя '{}'", userName);
-        Optional<User> userOptional = userRepository.findByUserName(userName);
-
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            // Используем passwordEncoder для сравнения
-            return passwordEncoder.matches(password, user.getPassword());
-        } else {
-            logger.error("Пользователь с именем {} не найден.", userName);
-            return false; // или бросьте исключение, если это необходимо
-        }
-    }
-
     public void saveUser(User user) throws SystemException {
         try{
             userRepository.save(user);
@@ -62,7 +46,7 @@ public class UserService {
 
     @Transactional
     public void updateUser(String userName, User updatedUser) throws SystemException {
-        userRepository.findByUserName(userName) // Изменено
+        userRepository.findByUserName(userName)
                 .map(user -> {
                     user.setUserName(updatedUser.getUserName());
                     user.setFirstName(updatedUser.getFirstName());
@@ -78,19 +62,19 @@ public class UserService {
     public User registerUser(User user) throws SystemException {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             logger.error("Пользователь с таким email уже существует.");
-            return null; // или выбросьте исключение
+            return null;
         }
 
         if (userRepository.findByUserName(user.getUserName()).isPresent()) {
             logger.error("Пользователь с таким именем пользователя уже существует.");
-            return null; // или выбросьте исключение
+            return null;
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole(new HashSet<>(Collections.singleton("USER")));
-            logger.info("Пользователь: " + user);
-            logger.info("Роли перед сохранением: " + user.getRole());
+            user.setRole(Collections.singleton("USER"));
+            logger.info("Пользователь: {}", user);
+            logger.info("Роли перед сохранением: {}", user.getRole());
         }
 
         User registredUser = userRepository.save(user);

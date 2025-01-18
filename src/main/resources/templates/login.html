@@ -5,9 +5,9 @@
 </head>
 <body>
 <h1>Вход</h1>
-<form th:action="@{/users/login}" method="post">
-  <label for="userName">Логин:</label>
-  <input type="text" id="userName" name="userName" required autocomplete="username">
+<form th:action="@{/auth/login}" method="post">
+  <label for="username">Логин:</label>
+  <input type="text" id="username" name="username" required autocomplete="username">
   <br>
   <label for="password">Пароль:</label>
   <input type="password" id="password" name="password" required autocomplete="current-password">

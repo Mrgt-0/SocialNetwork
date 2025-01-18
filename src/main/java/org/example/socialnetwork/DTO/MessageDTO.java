@@ -1,36 +1,21 @@
-package org.example.socialnetwork.Model;
+package org.example.socialnetwork.DTO;
 
-import jakarta.persistence.*;
-import org.example.socialnetwork.Status.MessageStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.ManyToOne;
+import org.example.socialnetwork.Model.User;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "messages")
-public class Message {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class MessageDTO {
     private Long message_id;
-
-    @ManyToOne
     private User sender;
-
-    @ManyToOne
     private User recipient;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime created_at;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updated_at;
-
-    @Column(name = "text", nullable = false)
     private String text;
 
-    public Message() {}
-
-    public Message(User sender, User recipient, LocalDateTime created_at, LocalDateTime updated_at, String text){
+    public MessageDTO(Long message_id, User sender, User recipient, LocalDateTime created_at, LocalDateTime updated_at, String text){
+        this.message_id=message_id;
         this.sender=sender;
         this.recipient=recipient;
         this.created_at=created_at;

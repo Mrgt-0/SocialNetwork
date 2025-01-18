@@ -1,4 +1,4 @@
-package test;
+package test.Service;
 
 import jakarta.transaction.SystemException;
 import org.example.socialnetwork.Model.User;
@@ -36,7 +36,7 @@ public class UserServiceTest {
         user = new User();
         user.setUserName("Mark");
         user.setEmail("Zucerberg");
-        user.setPasswordHash("password123"); // Не хешированный пароль для теста
+        user.setPassword("password123");
     }
 
     @Test
@@ -44,13 +44,11 @@ public class UserServiceTest {
         // Подготовка данных
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
         when(userRepository.findByUserName(user.getUserName())).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(user.getPasswordHash())).thenReturn("hashedpassword");
+        when(passwordEncoder.encode(user.getPassword())).thenReturn("hashedpassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
 
-        // Выполнение теста
         User registeredUser = userService.registerUser(user);
 
-        // Проверка результата
         assertNotNull(registeredUser);
         assertEquals("testuser", registeredUser.getUserName());
         verify(passwordEncoder).encode(anyString());
@@ -63,27 +61,22 @@ public class UserServiceTest {
     public void testRegisterUser_EmailAlreadyExists() throws SystemException {
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));  // Эмуляция существующего пользователя
 
-        // Выполнение теста
         User registeredUser = userService.registerUser(user);
 
-        // Проверка результата
         assertNull(registeredUser, "Пользователь не должен быть зарегистрирован.");
         verify(userRepository).findByEmail(user.getEmail());
-        verify(userRepository, never()).save(any(User.class)); // Не должно быть вызова save
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     public void testRegisterUser_UsernameAlreadyExists() throws SystemException {
-        // Подготовка данных
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-        when(userRepository.findByUserName(user.getUserName())).thenReturn(Optional.of(user)); // Эмуляция существующего имени пользователя
+        when(userRepository.findByUserName(user.getUserName())).thenReturn(Optional.of(user));
 
-        // Выполнение теста
         User registeredUser = userService.registerUser(user);
 
-        // Проверка результата
         assertNull(registeredUser, "Пользователь не должен быть зарегистрирован.");
         verify(userRepository).findByUserName(user.getUserName());
-        verify(userRepository, never()).save(any(User.class)); // Не должно быть вызова save
+        verify(userRepository, never()).save(any(User.class));
     }
 }
