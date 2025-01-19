@@ -27,8 +27,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/", "/auth/register", "/auth/login").permitAll() // Открытые страницы
-                        .requestMatchers("/messages", "/selectRecipient", "/send-message", "/users/profile").authenticated() // Доступ только для аутентифицированных пользователей
-                       // .requestMatchers("/admin/**").hasRole("ADMIN") // Доступ для администраторов
+                        .requestMatchers("/messages", "/selectRecipient", "/send-message", "/users/profile", "/posts/**", "/friends/**", "/communities/**").authenticated() // Доступ только для аутентифицированных пользователей
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Доступ для администраторов
                         .anyRequest().authenticated() // Все остальные страницы требуют аутентификации
                 )
                 .formLogin(form -> form

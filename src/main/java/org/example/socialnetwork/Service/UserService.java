@@ -25,14 +25,21 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User findUserById(int userId) {
+    public User findUserById(Long userId) {
         return userRepository.getById(userId);
     }
 
-    public Optional<User> findByUserName(String userName) { return userRepository.findByUserName(userName); }
+    public Optional<User> findUserByIdAsOptional(Long id) {
+        return userRepository.findById(id);
+    }
+    public User findByUserName(String userName) {
+        return userRepository.findByUserName(userName)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + userName));
+    }
 
-    public Optional<User> findByEmail(String email){
-        return userRepository.findByEmail(email);
+    public User findByEmail(String email){
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + email));
     }
 
     public void saveUser(User user) throws SystemException {

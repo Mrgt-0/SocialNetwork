@@ -1,9 +1,6 @@
 package org.example.socialnetwork.Model;
 
 import jakarta.persistence.*;
-import org.example.socialnetwork.Status.MessageStatus;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity

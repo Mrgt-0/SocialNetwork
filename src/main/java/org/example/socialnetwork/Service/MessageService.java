@@ -27,11 +27,11 @@ public class MessageService {
         return messageRepository.findBySenderAndRecipient(sender, recipient);
     }
 
-    public Message getMessageById(int id) {
+    public Message getMessageById(Long id) {
         return messageRepository.findById(id).orElse(null);
     }
 
-    public void deleteMessage(int id) {
+    public void deleteMessage(Long id) {
         messageRepository.deleteById(id);
     }
 }

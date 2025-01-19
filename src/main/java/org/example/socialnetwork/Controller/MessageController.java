@@ -47,7 +47,7 @@ public class MessageController {
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
         User currentUser = myUserDetails.getUser();
 
-        User recipient = userService.findByUserName(recipientUsername).orElse(null);
+        User recipient = userService.findByUserName(recipientUsername);
 
         if (recipient == null) {
             model.addAttribute("error", "Пользователь не найден.");
@@ -77,7 +77,7 @@ public class MessageController {
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
         User currentUser = myUserDetails.getUser();
 
-        User recipient = userService.findByUserName(recipientUsername).orElse(null);
+        User recipient = userService.findByUserName(recipientUsername);
 
         if (recipient != null) {
             Message message = new Message(currentUser, recipient, LocalDateTime.now(), LocalDateTime.now(), content);
@@ -94,7 +94,7 @@ public class MessageController {
 
         if (authentication.getPrincipal() instanceof MyUserDetails myUserDetails) {
             User currentUser = myUserDetails.getUser();
-            User recipientUser = userService.findUserById(Math.toIntExact(recipientId));
+            User recipientUser = userService.findUserById((long) Math.toIntExact(recipientId));
             if (recipientUser == null)
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 

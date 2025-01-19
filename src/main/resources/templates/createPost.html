@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Публичное сообщение</title>
+</head>
+<body>
+<h1>Публичное сообщение</h1>
+<form action="#" th:action="@{/posts/createPost}" th:object="${post}" method="post" enctype="multipart/form-data">
+    <label for="text">Текст поста:</label>
+    <textarea id="text" name="text" th:field="*{text}" required></textarea>
+    <br>
+    <label for="image">Выберите изображение:</label>
+    <input type="file" id="image" name="image" required/>
+    <br>
+    <button type="submit">Опубликовать</button>
+</form>
+</body>
+</html>

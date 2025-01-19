@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список групп</title>
+</head>
+<body>
+<header>
+    <h1>Сообщества</h1>
+    <nav>
+        <ul>
+            <li><a href="/communities">Все группы</a></li>
+            <li><a href="/profile">Профиль</a></li>
+        </ul>
+    </nav>
+</header>
+<main>
+    <section class="create-community">
+        <h2>Создать новую группу</h2>
+        <form id="communityForm" action="/communities" method="POST">
+            <label for="communityName">Название группы:</label>
+            <input type="text" id="communityName" name="community_name" required>
+
+            <label for="description">Описание:</label>
+            <textarea id="description" name="description" required></textarea>
+
+            <button type="submit">Создать группу</button>
+        </form>
+    </section>
+
+    <section class="community-list">
+        <h2>Список групп</h2>
+        <ul>
+            <li class="community-item">
+                <h3>Название группы</h3>
+                <p>Описание группы</p>
+                <form action="/communities/{id}/join" method="POST">
+                    <button type="submit">Присоединиться</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

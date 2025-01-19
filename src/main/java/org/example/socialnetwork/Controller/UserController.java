@@ -38,8 +38,14 @@ public class UserController {
         logger.info("Форма профиля отображается.");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUserName = auth.getName();
-        Optional<User> user = userService.findByUserName(currentUserName); // Получаем текущего пользователя
-        user.ifPresent(u -> model.addAttribute("user", u)); // Добавляем пользователя в модель
+        User user = userService.findByUserName(currentUserName);
+
+        if (user != null) {
+            model.addAttribute("user", user);
+        } else {
+            logger.warn("Пользователь не найден: {}", currentUserName);
+            model.addAttribute("errorMessage", "Пользователь не найден.");
+        }
         return "profile";
     }
 

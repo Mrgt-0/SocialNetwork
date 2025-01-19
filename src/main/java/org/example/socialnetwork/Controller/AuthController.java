@@ -52,11 +52,11 @@ public class AuthController {
             return "register"; // Вернуться к форме, если есть ошибки
         }
 
-        if (userService.findByEmail(user.getEmail()).isPresent()) {
+        if (userService.findByEmail(user.getEmail())!=null) {
             model.addAttribute("emailExists", "Email уже используется.");
             return "register"; // Вернуться к форме, если email уже существует
         }
-        if (userService.findByUserName(user.getUserName()).isPresent()) {
+        if (userService.findByUserName(user.getUserName())!=null) {
             model.addAttribute("usernameExists", "Имя уже используется.");
             return "register";
         }
