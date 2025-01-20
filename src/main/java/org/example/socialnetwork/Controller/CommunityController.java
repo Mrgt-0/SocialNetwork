@@ -1,14 +1,19 @@
 package org.example.socialnetwork.Controller;
 
+import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.Model.Community;
 import org.example.socialnetwork.Model.CommunityMember;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.CommunityService;
 import org.example.socialnetwork.Service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Controller
@@ -18,30 +23,52 @@ public class CommunityController {
     private CommunityService communityService;
     @Autowired
     private UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(CommunityController.class);
 
     @PostMapping
-    public String createCommunity(@RequestParam String name, @RequestParam String description, @RequestParam Long adminId) {
+    public String createCommunity(@RequestParam("community_name") String communityName, @RequestParam("description") String description, @AuthenticationPrincipal UserDetails userDetails) {
+        logger.info("Проверка данных о сообществе. Название: {}, Описание: {}, Администратор: {}", communityName, description, userDetails.getUsername());
+        Long adminId = ((MyUserDetails) userDetails).getUserId();
+
         User admin = userService.findUserByIdAsOptional(adminId)
-                .orElseThrow(() -> new RuntimeException("Администратор не найден"));
-        Community community = communityService.createCommunity(name, description, admin);
-        return "Сообщество создано: " + community.getCommunityName();
+                .orElseThrow(() -> {
+                    logger.error("Администратор с ID {} не найден.", adminId);
+                    return new RuntimeException("Администратор не найден");
+                });
+
+        Community community = communityService.createCommunity(communityName, description, admin);
+        logger.info("Сообщество успешно создано: {}", community.getCommunityName());
+        return "redirect:/communities";
     }
 
     @GetMapping
-    public List<Community> getAllCommunities() {
-        return communityService.getAllCommunities();
+    public String getAllCommunities(Model model) {
+        logger.info("Получение списка всех сообществ.");
+        List<Community> communities = communityService.getAllCommunities();
+        model.addAttribute("communities", communities);
+        logger.info("Количество сообществ получено: {}", communities.size());
+        return "communities";
     }
 
     @PostMapping("/{communityId}/join")
-    public String joinCommunity(@PathVariable Long communityId, @RequestParam Long userId) {
+    public String  joinCommunity(@PathVariable Long communityId, @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = ((MyUserDetails) userDetails).getUserId();
         User user = userService.findUserByIdAsOptional(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден")); // Используйте метод сервиса для поиска пользователя
-        CommunityMember member = communityService.joinCommunity(communityId, user);
-        return "Вы успешно присоединились к сообществу!";
+                .orElseThrow(() -> {
+                    logger.error("Пользователь с ID {} не найден.", userId);
+                    return new RuntimeException("Пользователь не найден");
+                });
+
+        communityService.joinCommunity(communityId, user);
+        logger.info("Пользователь {} успешно присоединился к сообществу с ID {}.", user.getUserName(), communityId);
+        return "redirect:/communities";
     }
 
     @GetMapping("/{communityId}/members")
     public List<CommunityMember> getMembers(@PathVariable Long communityId) {
-        return communityService.getMembers(communityId);
+        logger.info("Получение участников сообщества с ID: {}", communityId);
+        List<CommunityMember> members = communityService.getMembers(communityId);
+        logger.info("Количество участников сообщества с ID {}: {}", communityId, members.size());
+        return members;
     }
 }

@@ -32,6 +32,7 @@ public class UserService {
     public Optional<User> findUserByIdAsOptional(Long id) {
         return userRepository.findById(id);
     }
+
     public User findByUserName(String userName) {
         return userRepository.findByUserName(userName)
             .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + userName));

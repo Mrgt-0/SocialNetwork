@@ -26,33 +26,51 @@ public class CommunityService {
 
     @Transactional
     public Community createCommunity(String communityName, String description, User admin) {
+        logger.info("Создание сообщества: {}, Администратор: {}", communityName, admin.getUserName());
         Community community = new Community();
         community.setCommunityName(communityName);
         community.setDescription(description);
         community.setCreated_at(LocalDateTime.now());
         community.setAdmin(admin);
+        Community savedCommunity = communityRepository.save(community);
+        logger.info("Сообщество успешно создано: {}", savedCommunity.getCommunityName());
         return communityRepository.save(community);
     }
 
     public List<Community> getAllCommunities() {
-        return communityRepository.findAll();
+        List<Community> communities = communityRepository.findAll();
+        logger.info("Количество сообществ: {}", communities.size());
+        return communities;
     }
 
     @Transactional
     public CommunityMember joinCommunity(Long communityId, User user) {
+        logger.info("Пользователь {} пытается присоединиться к сообществу с ID: {}", user.getUserName(), communityId);
         Community community = communityRepository.findById(communityId)
-                .orElseThrow(() -> new RuntimeException("Сообщество не найдено"));
+                .orElseThrow(() -> {
+                    logger.error("Сообщество с ID {} не найдено.", communityId);
+                    return new RuntimeException("Сообщество не найдено");
+                });
 
         CommunityMember member = new CommunityMember();
         member.setCommunity(community);
         member.setUser(user);
         member.setJoined_at(LocalDateTime.now());
-        return communityMemberRepository.save(member);
+
+        CommunityMember savedMember = communityMemberRepository.save(member);
+        logger.info("Пользователь {} успешно присоединился к сообществу {}", user.getUserName(), community.getCommunityName());
+        return savedMember;
     }
 
     public List<CommunityMember> getMembers(Long communityId) {
+        logger.info("Получение участников сообщества с ID: {}", communityId);
         Community community = communityRepository.findById(communityId)
-                .orElseThrow(() -> new RuntimeException("Сообщество не найдено"));
-        return communityMemberRepository.findByCommunity(community);
+                .orElseThrow(() -> {
+                    logger.error("Сообщество с ID {} не найдено.", communityId);
+                    return new RuntimeException("Сообщество не найдено");
+                });
+        List<CommunityMember> members = communityMemberRepository.findByCommunity(community);
+        logger.info("Количество участников сообщества с ID {}: {}", communityId, members.size());
+        return members;
     }
 }

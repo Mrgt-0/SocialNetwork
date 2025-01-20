@@ -25,6 +25,9 @@ public class MyUserDetails implements UserDetails {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
+    public Long getUserId() {
+        return user.getUserId();
+    }
 
     @Override
     public String getPassword() {

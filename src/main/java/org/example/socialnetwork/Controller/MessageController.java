@@ -41,7 +41,7 @@ public class MessageController {
         if (recipientUsername == null || recipientUsername.isEmpty()) {
             model.addAttribute("error", "Параметр recipient не был передан.");
             logger.error("Параметр recipient не был передан.");
-            return "error"; // Возврат на страницу ошибки
+            return "error";
         }
 
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
@@ -52,23 +52,21 @@ public class MessageController {
         if (recipient == null) {
             model.addAttribute("error", "Пользователь не найден.");
             logger.error("Пользователь не найден.");
-            return "error"; // Шаблон для ошибок или возврат на предыдущую страницу
+            return "error";
         }
         logger.info("Пользователь найден.");
-        // Получаем сообщения между текущим пользователем и получателем
         List<Message> messages = messageService.getMessages(currentUser, recipient);
         model.addAttribute("messages", messages);
-        model.addAttribute("recipient", recipient); // Устанавливаем получателя в модель
+        model.addAttribute("recipient", recipient);
 
         return "messages";
     }
 
     @GetMapping("/selectRecipient")
     public String selectRecipient(Model model) {
-        // Здесь вы можете получить список пользователей
-        List<User> users = userRepository.findAll(); // ваш метод получения всех пользователей
+        List<User> users = userRepository.findAll();
         model.addAttribute("users", users);
-        return "selectRecipient"; // Тут должен быть ваш шаблон выбора пользователя
+        return "selectRecipient";
     }
 
     @PostMapping("/send-message")
@@ -83,9 +81,9 @@ public class MessageController {
             Message message = new Message(currentUser, recipient, LocalDateTime.now(), LocalDateTime.now(), content);
             messageService.saveMessage(message); // Сохраняем сообщение
 
-            return "redirect:/messages?recipient=" + recipientUsername; // Перенаправление на чат
+            return "redirect:/messages?recipient=" + recipientUsername;
         } else {
-            return "error"; // Обработка ошибки
+            return "error";
         }
     }
 
