@@ -1,9 +1,5 @@
 package org.example.socialnetwork.DTO;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.ManyToOne;
 import org.example.socialnetwork.Model.User;
-
 import java.time.LocalDateTime;
 
 public class MessageDTO {
@@ -14,13 +10,14 @@ public class MessageDTO {
     private LocalDateTime updated_at;
     private String text;
 
-    public MessageDTO(Long message_id, User sender, User recipient, LocalDateTime created_at, LocalDateTime updated_at, String text){
-        this.message_id=message_id;
-        this.sender=sender;
-        this.recipient=recipient;
-        this.created_at=created_at;
-        this.updated_at=updated_at;
-        this.text=text;
+    public MessageDTO() {}
+
+    public MessageDTO(User sender, User recipient, LocalDateTime created_at, LocalDateTime updated_at, String text) {
+        this.sender = sender;
+        this.recipient = recipient;
+        this.created_at = created_at;
+        this.updated_at = updated_at;
+        this.text = text;
     }
 
     public Long getMessage_id() { return message_id; }
@@ -29,7 +26,7 @@ public class MessageDTO {
 
     public User getSender() { return sender; }
 
-    public void setUser_id(User sender) { this.sender = sender; }
+    public void setSender(User sender) { this.sender = sender; }
 
     public User getRecipient() { return recipient; }
 

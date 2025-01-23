@@ -1,7 +1,8 @@
 package org.example.socialnetwork.Controller;
 
 import org.example.socialnetwork.Config.MyUserDetails;
-import org.example.socialnetwork.Model.Message;
+import org.example.socialnetwork.DTO.MessageDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.UserRepository;
 import org.example.socialnetwork.Service.MessageService;
@@ -16,9 +17,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -45,9 +43,9 @@ public class MessageController {
         }
 
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
-        User currentUser = myUserDetails.getUser();
+        UserDTO currentUser = myUserDetails.getUser();
 
-        User recipient = userService.findByUserName(recipientUsername);
+        UserDTO recipient = userService.findByUserName(recipientUsername);
 
         if (recipient == null) {
             model.addAttribute("error", "Пользователь не найден.");
@@ -55,7 +53,7 @@ public class MessageController {
             return "error";
         }
         logger.info("Пользователь найден.");
-        List<Message> messages = messageService.getMessages(currentUser, recipient);
+        List<MessageDTO> messages = messageService.getMessages(currentUser, recipient);
         model.addAttribute("messages", messages);
         model.addAttribute("recipient", recipient);
 
@@ -73,30 +71,29 @@ public class MessageController {
     public String sendMessage(@RequestParam("recipient") String recipientUsername,
                               @RequestParam("content") String content, Authentication authentication) {
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
-        User currentUser = myUserDetails.getUser();
+        UserDTO currentUserDTO = myUserDetails.getUser();
 
-        User recipient = userService.findByUserName(recipientUsername);
-
-        if (recipient != null) {
-            Message message = new Message(currentUser, recipient, LocalDateTime.now(), LocalDateTime.now(), content);
-            messageService.saveMessage(message); // Сохраняем сообщение
-
-            return "redirect:/messages?recipient=" + recipientUsername;
-        } else {
+        UserDTO recipientDTO = userService.findByUserName(recipientUsername);
+        if (recipientDTO == null) {
+            logger.error("Не удалось отправить сообщение. Получатель '{}' не найден.", recipientUsername);
             return "error";
         }
+        messageService.sendMessage(currentUserDTO, recipientDTO, content);
+
+        logger.info("Сообщение успешно отправлено от '{}' к '{}'.", currentUserDTO.getUserName(), recipientUsername);
+        return "redirect:/messages?recipient=" + recipientUsername;
     }
 
-    public ResponseEntity<List<Message>> getMessages(@PathVariable Long recipientId) {
+    public ResponseEntity<List<MessageDTO>> getMessages(@PathVariable Long recipientId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication.getPrincipal() instanceof MyUserDetails myUserDetails) {
-            User currentUser = myUserDetails.getUser();
-            User recipientUser = userService.findUserById((long) Math.toIntExact(recipientId));
+            UserDTO currentUser = myUserDetails.getUser();
+            UserDTO recipientUser = userService.findUserById((long) Math.toIntExact(recipientId));
             if (recipientUser == null)
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 
-            List<Message> messages = messageService.getMessages(currentUser, recipientUser);
+            List<MessageDTO> messages = messageService.getMessages(currentUser, recipientUser);
             return ResponseEntity.ok(messages);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

@@ -2,13 +2,23 @@ package org.example.socialnetwork.Controller;
 
 import jakarta.transaction.SystemException;
 import jakarta.validation.Valid;
+import org.example.socialnetwork.DTO.UserDTO;
+import org.example.socialnetwork.Model.LoginResponse;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.UserDetailsServiceImpl;
 import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,59 +27,67 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/auth")
 public class AuthController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AuthenticationProvider authenticationProvider;
+
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-//    @GetMapping("/{id}")
-//    public ResponseEntity<User> getUserById(@PathVariable Integer id) {
-//        Optional<User> user = Optional.ofNullable(userService.findUserById(id));
-//        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+//    @GetMapping("/register")
+//    public String showRegistrationForm(Model model) {
+//        model.addAttribute("user", new User());
+//        return "register";
 //    }
-//
-//    // Получение пользователя по имени пользователя
-//    @GetMapping("/username/{username}")
-//    public ResponseEntity<User> getUserByUserName(@PathVariable("username") String userName) {
-//        Optional<User> user = userService.findByUserName(userName);
-//        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-//    }
-
-    @GetMapping("/register")
-    public String showRegistrationForm(Model model) {
-        model.addAttribute("user", new User());
-        return "register"; // Шаблон для регистрации
-    }
 
     @PostMapping("/register")
-    public String registerUser(@Valid @ModelAttribute("user") User user,
-                               BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) throws SystemException {
-        if (bindingResult.hasErrors()) {
-            logger.error("Ошибки валидации: " + bindingResult.getAllErrors());
-            return "register"; // Вернуться к форме, если есть ошибки
-        }
+    public ResponseEntity<?> registerUser(@RequestBody @Valid UserDTO user) throws SystemException {
+        logger.info("Попытка регистрации нового пользователя: {}", user.getUserName());
 
-        if (userService.findByEmail(user.getEmail())!=null) {
-            model.addAttribute("emailExists", "Email уже используется.");
-            return "register"; // Вернуться к форме, если email уже существует
+        try {
+            userService.registerUser(user);
+            return ResponseEntity.ok("Регистрация прошла успешно! Пожалуйста, войдите.");
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при регистрации: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Ошибка при регистрации: " + e.getMessage());
         }
-        if (userService.findByUserName(user.getUserName())!=null) {
-            model.addAttribute("usernameExists", "Имя уже используется.");
-            return "register";
-        }
-
-        userService.registerUser(user);
-        redirectAttributes.addFlashAttribute("successMessage", "Регистрация прошла успешно! Пожалуйста, войдите.");
-        return "redirect:/auth/login"; // Перенаправление пользователя на страницу входа
     }
 
-    @GetMapping("/login")
-    public String showLoginForm(Model model) {
-        logger.info("Пользователь открывает страницу логина.");
-        model.addAttribute("user", new User());
-        return "login"; // Шаблон для входа
+//    @GetMapping("/login")
+//    public String showLoginForm(Model model) {
+//        logger.info("Пользователь открывает страницу логина.");
+//        model.addAttribute("user", new User());
+//        return "login";
+//    }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody @Valid UserDTO user) {
+        logger.info("Пользователь пытается войти: {}", user.getUserName());
+
+        try {
+            Authentication authentication = authenticationProvider.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword())
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            logger.info("Аутентифицированный пользователь: {}", userDetails.getUsername());
+            String role = userDetails.getAuthorities().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Роль пользователя не найдена"))
+                    .getAuthority();
+
+            return ResponseEntity.ok(new LoginResponse(userDetails.getUsername(), role));
+        } catch (BadCredentialsException e) {
+            logger.error("Неправильное имя пользователя или пароль.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Неправильное имя пользователя или пароль.");
+        } catch (Exception e) {
+            logger.error("Ошибка при логине: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Произошла ошибка при входе.");
+        }
     }
 }

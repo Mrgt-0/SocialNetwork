@@ -1,6 +1,8 @@
 package org.example.socialnetwork.Controller;
 
 import org.example.socialnetwork.Config.MyUserDetails;
+import org.example.socialnetwork.DTO.FriendDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Friend;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.FriendService;
@@ -31,8 +33,8 @@ public class FriendController {
     @GetMapping
     public String showFriends(Model model, Authentication authentication) {
         MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
-        User currentUser = userDetails.getUser();
-        List<Friend> friends = friendService.getFriends(currentUser);
+        UserDTO currentUser = userDetails.getUser();
+        List<FriendDTO> friends = friendService.getFriends(currentUser);
         model.addAttribute("friends", friends);
         return "friends";
     }
@@ -40,8 +42,8 @@ public class FriendController {
     @PostMapping("/add")
     public String addFriend(@RequestParam String userName, Model model, Authentication authentication) {
         MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
-        User currentUser = userDetails.getUser();
-        User friend = userService.findByUserName(userName);
+        UserDTO currentUser = userDetails.getUser();
+        UserDTO friend = userService.findByUserName(userName);
 
         logger.info("Current user id: {}", currentUser.getUserId());
         logger.info("Friend user id: {}", friend.getUserId());
@@ -52,7 +54,7 @@ public class FriendController {
             model.addAttribute("errorMessage", e.getMessage());
         }
 
-        List<Friend> friends = friendService.getFriends(currentUser);
+        List<FriendDTO> friends = friendService.getFriends(currentUser);
         model.addAttribute("friends", friends);
 
         return "friends";

@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.Controller.FriendController;
+import org.example.socialnetwork.DTO.FriendDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Friend;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.FriendService;
@@ -52,11 +54,11 @@ public class FriendControllerTest {
 
     @Test
     public void testShowFriends() throws Exception {
-        User user = new User();
+        UserDTO user = new UserDTO();
         when(authentication.getPrincipal()).thenReturn(myUserDetails);
         when(myUserDetails.getUser()).thenReturn(user);
 
-        List<Friend> friends = Collections.emptyList();
+        List<FriendDTO> friends = Collections.emptyList();
         when(friendService.getFriends(user)).thenReturn(friends);
 
         mockMvc.perform(get("/friends").principal(() -> "username"))
@@ -67,8 +69,8 @@ public class FriendControllerTest {
 
     @Test
     public void testAddFriend() throws Exception {
-        User currentUser = new User();
-        User friend = new User();
+        UserDTO currentUser = new UserDTO();
+        UserDTO friend = new UserDTO();
         String userName = "friendUsername";
 
         when(authentication.getPrincipal()).thenReturn(myUserDetails);

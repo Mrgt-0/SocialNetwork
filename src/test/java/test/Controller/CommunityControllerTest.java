@@ -4,6 +4,9 @@ import static org.mockito.Mockito.*;
 
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.Controller.CommunityController;
+import org.example.socialnetwork.DTO.CommunityDTO;
+import org.example.socialnetwork.DTO.CommunityMemberDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Community;
 import org.example.socialnetwork.Model.CommunityMember;
 import org.example.socialnetwork.Model.User;
@@ -36,12 +39,12 @@ public class CommunityControllerTest {
     private Model model;
 
     private MyUserDetails userDetails;
-    private User admin;
+    private UserDTO admin;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        admin = new User();
+        admin = new UserDTO();
         admin.setUserId(1L);
         admin.setUserName("Admin");
         userDetails = new MyUserDetails(admin);
@@ -49,12 +52,12 @@ public class CommunityControllerTest {
 
     @Test
     public void testCreateCommunity() {
-        Community community = new Community();
+        CommunityDTO community = new CommunityDTO();
         community.setId(1L);
         community.setCommunityName("Test Community");
 
         when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.of(admin));
-        when(communityService.createCommunity(any(String.class), any(String.class), any(User.class))).thenReturn(community);
+        when(communityService.createCommunity(any(String.class), any(String.class), any(UserDTO.class))).thenReturn(community);
 
         String result = communityController.createCommunity("Test Community", "Test Description", userDetails);
 
@@ -65,7 +68,7 @@ public class CommunityControllerTest {
 
     @Test
     public void testGetAllCommunities() {
-        when(communityService.getAllCommunities()).thenReturn(Collections.singletonList(new Community()));
+        when(communityService.getAllCommunities()).thenReturn(Collections.singletonList(new CommunityDTO()));
 
         String result = communityController.getAllCommunities(model);
 
@@ -75,12 +78,12 @@ public class CommunityControllerTest {
 
     @Test
     public void testJoinCommunity() {
-        Community community = new Community();
+        CommunityDTO community = new CommunityDTO();
         community.setId(1L);
         community.setCommunityName("Test Community");
 
         when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.of(admin));
-        when(communityService.joinCommunity(1L, admin)).thenReturn(new CommunityMember());
+        when(communityService.joinCommunity(1L, admin)).thenReturn(new CommunityMemberDTO());
 
         String result = communityController.joinCommunity(1L, userDetails);
 
@@ -90,11 +93,11 @@ public class CommunityControllerTest {
 
     @Test
     public void testGetMembers() {
-        Community community = new Community();
+        CommunityDTO community = new CommunityDTO();
         community.setId(1L);
-        when(communityService.getMembers(1L)).thenReturn(Collections.singletonList(new CommunityMember()));
+        when(communityService.getMembers(1L)).thenReturn(Collections.singletonList(new CommunityMemberDTO()));
 
-        List<CommunityMember> members = communityController.getMembers(1L);
+        List<CommunityMemberDTO> members = communityController.getMembers(1L);
 
         assertNotNull(members);
         assertEquals(1, members.size());

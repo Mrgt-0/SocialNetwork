@@ -11,9 +11,11 @@ public class Message {
     private Long message_id;
 
     @ManyToOne
+    @JoinColumn(name = "sender_user_id")
     private User sender;
 
     @ManyToOne
+    @JoinColumn(name = "recipient_user_id")
     private User recipient;
 
     @Column(name = "created_at", nullable = false)
@@ -41,7 +43,7 @@ public class Message {
 
     public User getSender() { return sender; }
 
-    public void setUser_id(User sender) { this.sender = sender; }
+    public void setSender(User sender) { this.sender = sender; }
 
     public User getRecipient() { return recipient; }
 
@@ -58,4 +60,15 @@ public class Message {
     public String getText() { return text; }
 
     public void setText(String text) { this.text = text; }
+
+    @PrePersist
+    public void prePersist() {
+        created_at = LocalDateTime.now();
+        updated_at = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updated_at = LocalDateTime.now();
+    }
 }

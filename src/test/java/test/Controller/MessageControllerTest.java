@@ -1,12 +1,10 @@
 package test.Controller;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.Controller.MessageController;
-import org.example.socialnetwork.Model.Message;
+import org.example.socialnetwork.DTO.MessageDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.UserRepository;
 import org.example.socialnetwork.Service.MessageService;
@@ -16,12 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -45,32 +39,29 @@ public class MessageControllerTest {
     @Mock
     private Model model;
 
-    private User currentUser;
-    private User recipient;
-    private Message message;
+    private UserDTO currentUser;
+    private UserDTO recipient;
+    private MessageDTO message;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        // Настройка текущего пользователя
-        currentUser = new User();
+        currentUser = new UserDTO();
         currentUser.setUserId(1L);
         currentUser.setUserName("currentUser");
 
-        // Настройка получателя
-        recipient = new User();
+        recipient = new UserDTO();
         recipient.setUserId(2L);
         recipient.setUserName("recipient");
 
-        // Настройка сообщения
-        message = new Message(currentUser, recipient, LocalDateTime.now(), LocalDateTime.now(), "Hello!");
+        message = new MessageDTO(convertToEntity(currentUser), convertToEntity(recipient), LocalDateTime.now(), LocalDateTime.now(), "Hello!");
     }
 
     @Test
     public void testShowMessages_Success() {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
-        when(userService.findByUserName("recipient")).thenReturn(Optional.of(recipient));
+        when(userService.findUserByUserNameAsOptional("recipient")).thenReturn(Optional.of(recipient));
         when(messageService.getMessages(currentUser, recipient)).thenReturn(List.of(message));
 
         String viewName = messageController.showMessages("recipient", model, authentication);
@@ -83,7 +74,7 @@ public class MessageControllerTest {
     @Test
     public void testShowMessages_RecipientNotFound() {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
-        when(userService.findByUserName("nonexistent")).thenReturn(Optional.empty());
+        when(userService.findUserByUserNameAsOptional("nonexistent")).thenReturn(Optional.empty());
 
         String viewName = messageController.showMessages("nonexistent", model, authentication);
 
@@ -102,21 +93,38 @@ public class MessageControllerTest {
     @Test
     public void testSendMessage_Success() {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
-        when(userService.findByUserName(recipient.getUserName())).thenReturn(Optional.of(recipient));
+        when(userService.findUserByUserNameAsOptional(recipient.getUserName())).thenReturn(Optional.of(recipient));
 
         String viewName = messageController.sendMessage(recipient.getUserName(), "Hello", authentication);
 
         assertEquals("redirect:/messages?recipient=recipient", viewName);
-        verify(messageService).saveMessage(any(Message.class));
+        verify(messageService).saveMessage(any(MessageDTO.class));
     }
 
     @Test
     public void testSendMessage_RecipientNotFound() {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
-        when(userService.findByUserName(recipient.getUserName())).thenReturn(Optional.empty());
+        when(userService.findUserByUserNameAsOptional(recipient.getUserName())).thenReturn(Optional.empty());
 
         String viewName = messageController.sendMessage(recipient.getUserName(), "Hello", authentication);
 
         assertEquals("error", viewName);
+    }
+
+    private User convertToEntity(UserDTO userDTO) {
+        if (userDTO == null) {
+            return null;
+        }
+        User user = new User();
+        user.setUserId(userDTO.getUserId());
+        user.setUserName(userDTO.getUserName());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setBirthdate(userDTO.getBirthdate());
+        user.setProfilePicture(userDTO.getProfilePicture());
+        user.setRole(userDTO.getRole());
+        return user;
     }
 }

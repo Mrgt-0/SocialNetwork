@@ -1,6 +1,8 @@
 package org.example.socialnetwork.Service;
 
 import jakarta.transaction.Transactional;
+import org.example.socialnetwork.DTO.PostDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Post;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.PostRepository;
@@ -16,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
@@ -37,32 +40,37 @@ public class PostService {
     }
 
     @Transactional
-    public Post publicationPost(Post post){
+    public Post publicationPost(PostDTO postDTO){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            User currentUser = userService.findByUserName(userDetails.getUsername());
-            post.setUser(currentUser); // Установка текущего пользователя
+            UserDTO currentUser = userService.findByUserName(userDetails.getUsername());
+            postDTO.setUser(convertToEntity(currentUser));
         } else {
             logger.warn("Пользователь не аутентифицирован, пост не будет опубликован.");
             throw new RuntimeException("Пользователь не аутентифицирован");
         }
 
-        post.setCreated_at(LocalDateTime.now());
-        post.setUpdated_at(LocalDateTime.now());
-        logger.info("Проверка полей перед сохранением: username = {}, text = {}, image = {}", post.getUser().getUserName(), post.getText(), post.getImage());
-        Post publishedPost = postRepository.save(post);
+        postDTO.setCreated_at(LocalDateTime.now());
+        postDTO.setUpdated_at(LocalDateTime.now());
+        logger.info("Проверка полей перед сохранением: username = {}, text = {}, image = {}", postDTO.getUser().getUserName(), postDTO.getText(), postDTO.getImage());
+        Post publishedPost = postRepository.save(convertToEntity(postDTO));
         logger.info("Пост успешно зарегистрирован.");
         return publishedPost;
     }
 
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
+    public List<PostDTO> getAllPosts() {
+        List<Post> posts = postRepository.findAll();
+        List<PostDTO> postDTOs = posts.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return postDTOs;
     }
 
     @Transactional
-    public Post updatedPost(Long post_id, Post updatedPost){
-        return postRepository.findPostById(post_id)
+    public PostDTO updatedPost(Long post_id, PostDTO updatedPost){
+        Post post1 = postRepository.findPostById(post_id)
                 .map(post->{
                     post.setText(updatedPost.getText());
                     post.setImage(updatedPost.getImage());
@@ -70,14 +78,56 @@ public class PostService {
                     return postRepository.save(post);
                 })
                 .orElseThrow(() -> new RuntimeException("Пост не найден."));
+        return convertToDTO(post1);
     }
 
     @Transactional
-    public void deletePost(Post post){
-        if(post!=null){
-            postRepository.deleteById(post.getPostId());
-            logger.info("Пост успешно удален.");
-        }else
-            logger.error("Пост не найден.");
+    public void deletePostById(Long postId){
+        postRepository.deleteById(postId);
+        logger.info("Пост с ID {} успешно удален.", postId);
+    }
+
+    private PostDTO convertToDTO(Post post) {
+        if (post == null) {
+            return null;
+        }
+        PostDTO postDTO = new PostDTO();
+        postDTO.setPostId(postDTO.getPostId());
+        postDTO.setUser(post.getUser());
+        postDTO.setImage(post.getImage());
+        postDTO.setCreated_at(post.getCreated_at());
+        postDTO.setUpdated_at(post.getUpdated_at());
+        postDTO.setText(post.getText());
+        return postDTO;
+    }
+
+    private Post convertToEntity(PostDTO postDTO) {
+        if (postDTO == null) {
+            return null;
+        }
+        Post post = new Post();
+        post.setUser(postDTO.getUser());
+        post.setImage(postDTO.getImage());
+        post.setCreated_at(postDTO.getCreated_at());
+        post.setUpdated_at(postDTO.getUpdated_at());
+        post.setText(postDTO.getText());
+        return post;
+    }
+
+    private User convertToEntity(UserDTO userDTO) {
+        if (userDTO == null) {
+            return null;
+        }
+        User user = new User();
+        user.setUserId(userDTO.getUserId());
+        user.setUserName(userDTO.getUserName());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setBirthdate(userDTO.getBirthdate());
+        user.setProfilePicture(userDTO.getProfilePicture());
+        user.setRole(userDTO.getRole());
+        return user;
     }
 }

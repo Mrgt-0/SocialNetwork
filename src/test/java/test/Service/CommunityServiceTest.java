@@ -1,5 +1,8 @@
 package test.Service;
 
+import org.example.socialnetwork.DTO.CommunityDTO;
+import org.example.socialnetwork.DTO.CommunityMemberDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Community;
 import org.example.socialnetwork.Model.CommunityMember;
 import org.example.socialnetwork.Model.User;
@@ -30,25 +33,25 @@ public class CommunityServiceTest {
     @Mock
     private CommunityMemberRepository communityMemberRepository;
 
-    private User admin;
+    private UserDTO admin;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        admin = new User();
+        admin = new UserDTO();
         admin.setUserName("Admin");
         admin.setUserId(1L);
     }
 
     @Test
     public void testCreateCommunity() {
-        Community community = new Community();
+        CommunityDTO community = new CommunityDTO();
         community.setCommunityName("Тестовое сообщество");
         community.setDescription("Описание тестового сообщества");
 
-        when(communityRepository.save(any(Community.class))).thenReturn(community);
+        when(communityRepository.save(any(Community.class))).thenReturn(convertToEntity(community));
 
-        Community createdCommunity = communityService.createCommunity("Тестовое сообщество", "Описание тестового сообщества", admin);
+        CommunityDTO createdCommunity = communityService.createCommunity("Тестовое сообщество", "Описание тестового сообщества", admin);
 
         assertNotNull(createdCommunity);
         assertEquals("Тестовое сообщество", createdCommunity.getCommunityName());
@@ -59,7 +62,7 @@ public class CommunityServiceTest {
     public void testGetAllCommunities() {
         when(communityRepository.findAll()).thenReturn(Collections.singletonList(new Community()));
 
-        List<Community> communities = communityService.getAllCommunities();
+        List<CommunityDTO> communities = communityService.getAllCommunities();
 
         assertNotNull(communities);
         assertEquals(1, communities.size());
@@ -68,14 +71,14 @@ public class CommunityServiceTest {
 
     @Test
     public void testJoinCommunity() {
-        Community community = new Community();
+        CommunityDTO community = new CommunityDTO();
         community.setId(1L);
         community.setCommunityName("Тестовое сообщество");
 
-        when(communityRepository.findById(1L)).thenReturn(Optional.of(community));
+        when(communityRepository.findById(1L)).thenReturn(Optional.of(convertToEntity(community)));
         when(communityMemberRepository.save(any(CommunityMember.class))).thenReturn(new CommunityMember());
 
-        CommunityMember member = communityService.joinCommunity(1L, admin);
+        CommunityMemberDTO member = communityService.joinCommunity(1L, admin);
 
         assertNotNull(member);
         verify(communityRepository, times(1)).findById(1L);
@@ -84,12 +87,12 @@ public class CommunityServiceTest {
 
     @Test
     public void testGetMembers() {
-        Community community = new Community();
+        CommunityDTO community = new CommunityDTO();
         community.setId(1L);
-        when(communityRepository.findById(1L)).thenReturn(Optional.of(community));
-        when(communityMemberRepository.findByCommunity(community)).thenReturn(Collections.singletonList(new CommunityMember()));
+        when(communityRepository.findById(1L)).thenReturn(Optional.of(convertToEntity(community)));
+        when(communityMemberRepository.findByCommunity(convertToEntity(community))).thenReturn(Collections.singletonList(new CommunityMember()));
 
-        List<CommunityMember> members = communityService.getMembers(1L);
+        List<CommunityMemberDTO> members = communityService.getMembers(1L);
 
         assertNotNull(members);
         assertEquals(1, members.size());
@@ -106,5 +109,18 @@ public class CommunityServiceTest {
 
         assertEquals("Сообщество не найдено", exception.getMessage());
         verify(communityRepository, times(1)).findById(1L);
+    }
+
+    private Community convertToEntity(CommunityDTO communityDTO) {
+        if (communityDTO == null) {
+            return null;
+        }
+        Community community = new Community();
+        community.setId(communityDTO.getId());
+        community.setCommunityName(communityDTO.getCommunityName());
+        community.setDescription(communityDTO.getDescription());
+        community.setCreated_at(communityDTO.getCreated_at());
+        community.setAdmin(communityDTO.getAdmin());
+        return community;
     }
 }

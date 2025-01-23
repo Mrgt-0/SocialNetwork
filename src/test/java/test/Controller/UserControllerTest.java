@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import jakarta.transaction.SystemException;
 import org.example.socialnetwork.Controller.UserController;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.UserDetailsServiceImpl;
 import org.example.socialnetwork.Service.UserService;
@@ -37,13 +38,13 @@ public class UserControllerTest {
     @Mock
     private Model model;
 
-    private User currentUser;
+    private UserDTO currentUser;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
 
-        currentUser = new User();
+        currentUser = new UserDTO();
         currentUser.setUserName("currentUser");
         currentUser.setUserId(1L);
 
@@ -53,7 +54,7 @@ public class UserControllerTest {
 
     @Test
     public void testShowProfileForm() {
-        when(userService.findByUserName(currentUser.getUserName())).thenReturn(Optional.of(currentUser));
+        when(userService.findByUserName(currentUser.getUserName()));
 
         String viewName = userController.showProfileForm(model);
 
@@ -63,7 +64,7 @@ public class UserControllerTest {
 
     @Test
     public void testUpdateProfile() throws SystemException {
-        User updatedUser = new User();
+        UserDTO updatedUser = new UserDTO();
         updatedUser.setUserName("newUser");
         updatedUser.setUserId(1L);
 

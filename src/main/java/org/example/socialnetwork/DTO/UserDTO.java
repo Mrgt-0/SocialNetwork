@@ -15,6 +15,8 @@ public class UserDTO {
     private String profilePicture;
     private Set<String> role;
 
+    public UserDTO() {}
+
     public UserDTO(Long userId, String userName, String firstName, String lastName, String password, String email, LocalDate birthdate, String profilePicture, Set<String> role){
         this.userId=userId;
         this.userName = userName;

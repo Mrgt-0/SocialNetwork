@@ -1,5 +1,7 @@
 package test.Service;
 
+import org.example.socialnetwork.DTO.MessageDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Message;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.MessageRepository;
@@ -24,26 +26,26 @@ public class MessageServiceTest {
     @Mock
     private MessageRepository messageRepository;
 
-    private User sender;
-    private User recipient;
-    private Message message;
+    private UserDTO senderDTO;
+    private UserDTO recipientDTO;
+    private MessageDTO messageDTO;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        sender = new User();
-        sender.setUserId(1L);
-        sender.setUserName("sender");
+        senderDTO = new UserDTO();
+        senderDTO.setUserId(1L);
+        senderDTO.setUserName("sender");
 
-        recipient = new User();
-        recipient.setUserId(2L);
-        recipient.setUserName("recipient");
-        message = new Message(sender, recipient, LocalDateTime.now(), LocalDateTime.now(), "Hello!");
+        recipientDTO = new UserDTO();
+        recipientDTO.setUserId(2L);
+        recipientDTO.setUserName("recipient");
+        messageDTO = new MessageDTO(convertToEntity(senderDTO), convertToEntity(recipientDTO), LocalDateTime.now(), LocalDateTime.now(), "Hello!");
     }
 
     @Test
     public void testSendMessage() {
-        messageService.sendMessage(sender, recipient, "Hello!");
+        messageService.sendMessage(senderDTO, recipientDTO, "Hello!");
 
         verify(messageRepository, times(1)).save(any(Message.class));
     }
@@ -51,19 +53,22 @@ public class MessageServiceTest {
     @Test
     public void testGetMessages() {
         List<Message> messages = new ArrayList<>();
-        messages.add(message);
-        when(messageRepository.findBySenderAndRecipient(sender, recipient)).thenReturn(messages);
+        messages.add(convertToEntity(messageDTO));
 
-        List<Message> resultMessages = messageService.getMessages(sender, recipient);
-        assertEquals(1, resultMessages.size());
-        assertEquals("Hello!", resultMessages.get(0).getText());
+        when(messageRepository.findMessagesBySenderAndRecipient(convertToEntity(senderDTO), convertToEntity(recipientDTO)))
+                .thenReturn(messages);
+
+        List<MessageDTO> resultMessagesDTO = messageService.getMessages(senderDTO, recipientDTO);
+        assertEquals(1, resultMessagesDTO.size());
+        assertEquals("Hello!", resultMessagesDTO.get(0).getText());
     }
 
     @Test
     public void testGetMessageById() {
+        Message message = convertToEntity(messageDTO);
         when(messageRepository.findById(1L)).thenReturn(Optional.of(message));
 
-        Message foundMessage = messageService.getMessageById(1L);
+        MessageDTO foundMessage = messageService.getMessageById(1L);
         assertNotNull(foundMessage);
         assertEquals("Hello!", foundMessage.getText());
     }
@@ -72,5 +77,36 @@ public class MessageServiceTest {
     public void testDeleteMessage() {
         messageService.deleteMessage(1L);
         verify(messageRepository, times(1)).deleteById(1L);
+    }
+
+    private Message convertToEntity(MessageDTO messageDTO) {
+        if (messageDTO == null) {
+            return null;
+        }
+        Message message=new Message();
+        message.setMessage_id(messageDTO.getMessage_id());
+        message.setSender(messageDTO.getSender());
+        message.setRecipient(messageDTO.getRecipient());
+        message.setCreated_at(messageDTO.getCreated_at());
+        message.setCreated_at(messageDTO.getCreated_at());
+        message.setText(messageDTO.getText());
+        return message;
+    }
+
+    private User convertToEntity(UserDTO userDTO) {
+        if (userDTO == null) {
+            return null;
+        }
+        User user = new User();
+        user.setUserId(userDTO.getUserId());
+        user.setUserName(userDTO.getUserName());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setBirthdate(userDTO.getBirthdate());
+        user.setProfilePicture(userDTO.getProfilePicture());
+        user.setRole(userDTO.getRole());
+        return user;
     }
 }

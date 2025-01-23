@@ -1,5 +1,6 @@
 package org.example.socialnetwork.Controller;
 
+import org.example.socialnetwork.DTO.PostDTO;
 import org.example.socialnetwork.Model.Post;
 import org.example.socialnetwork.Service.PostService;
 import org.slf4j.Logger;
@@ -28,17 +29,17 @@ public class PostController {
     private static final Logger logger = LoggerFactory.getLogger(PostController.class);
 
     @RequestMapping("/createPost")
-    public String publicationPost(@ModelAttribute("post") Post post,
+    public String publicationPost(@ModelAttribute("post") PostDTO post,
                                   BindingResult bindingResult,
                                   @RequestParam("image") MultipartFile file,
                                   RedirectAttributes redirectAttributes) {
         logger.info("текст поста: {}", post.getText());
         logger.info("файл изображения: {}", file.getOriginalFilename());
-
-        if (!file.isEmpty()) {
-            String fileName = saveImage(file);
-            post.setImage(fileName);
-        }
+//
+//        if (!file.isEmpty()) {
+//            String fileName = saveImage(file);
+//            post.setImage(fileName);
+//        }
         postService.publicationPost(post);
         redirectAttributes.addFlashAttribute("successMessage", "Пост опубликован успешно!");
         return "redirect:/posts/allPosts";
@@ -46,43 +47,43 @@ public class PostController {
 
     @GetMapping("/createPost")
     public String showPostCreateForm(Model model) {
-        model.addAttribute("post", new Post());
+        model.addAttribute("post", new PostDTO());
         logger.info("Отображение формы создания постов.");
         return "createPost";
     }
 
     @GetMapping("/allPosts")
     public String showAllPosts(Model model) {
-        List<Post> posts = postService.getAllPosts();
+        List<PostDTO> posts = postService.getAllPosts();
         model.addAttribute("posts", posts);
-        for (Post post : posts)
+        for (PostDTO post : posts)
             logger.info("Пост: {}, Автор: {}", post.getText(), post.getUser() != null ? post.getUser().getUserName() : "Не указано");
 
         logger.info("Отображение страницы постов.");
         return "allPosts";
     }
 
-    public String saveImage(MultipartFile file) {
-        if (file.isEmpty()) {
-            logger.error("Загруженный файл пуст");
-            throw new RuntimeException("Загруженный файл пуст");
-        }
-        try {
-            String uploadDir = "src/main/resources/static/posts/";
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            File imageFile = new File(uploadDir + fileName);
-            if (!imageFile.getParentFile().exists())
-                imageFile.getParentFile().mkdirs();
-
-            file.transferTo(imageFile);
-            logger.info("Файл успешно сохранен: {}", imageFile.getAbsolutePath());
-            return fileName;
-        } catch (IOException e) {
-            logger.error("Ошибка при сохранении файла: {}", e.getMessage());
-            throw new RuntimeException("Ошибка при сохранении файла", e);
-        } catch (Exception e) {
-            logger.error("Общая ошибка: {}", e.getMessage());
-            throw new RuntimeException("Ошибка при сохранении файла", e);
-        }
-    }
+//    public String saveImage(MultipartFile file) {
+//        if (file.isEmpty()) {
+//            logger.error("Загруженный файл пуст");
+//            throw new RuntimeException("Загруженный файл пуст");
+//        }
+//        try {
+//            String uploadDir = "src/main/resources/static/posts/";
+//            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+//            File imageFile = new File(uploadDir + fileName);
+//            if (!imageFile.getParentFile().exists())
+//                imageFile.getParentFile().mkdirs();
+//
+//            file.transferTo(imageFile);
+//            logger.info("Файл успешно сохранен: {}", imageFile.getAbsolutePath());
+//            return fileName;
+//        } catch (IOException e) {
+//            logger.error("Ошибка при сохранении файла: {}", e.getMessage());
+//            throw new RuntimeException("Ошибка при сохранении файла", e);
+//        } catch (Exception e) {
+//            logger.error("Общая ошибка: {}", e.getMessage());
+//            throw new RuntimeException("Ошибка при сохранении файла", e);
+//        }
+//    }
 }

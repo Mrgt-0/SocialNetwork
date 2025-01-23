@@ -1,5 +1,6 @@
 package org.example.socialnetwork.Config;
 
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,9 +14,9 @@ import java.util.stream.Collectors;
 
 public class MyUserDetails implements UserDetails {
 
-    private User user;
+    private UserDTO user;
 
-    public MyUserDetails(User user){
+    public MyUserDetails(UserDTO user){
         this.user=user;
     }
 
@@ -59,7 +60,7 @@ public class MyUserDetails implements UserDetails {
         return true;
     }
 
-    public User getUser() {
+    public UserDTO getUser() {
         return user;
     }
 }

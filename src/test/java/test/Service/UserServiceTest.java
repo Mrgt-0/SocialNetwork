@@ -1,6 +1,7 @@
 package test.Service;
 
 import jakarta.transaction.SystemException;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.UserRepository;
 import org.example.socialnetwork.Service.UserService;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,54 +31,71 @@ public class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    private User user;
+    private UserDTO userDTO;
 
     @BeforeEach
     public void setUp() {
-        user = new User();
-        user.setUserName("Mark");
-        user.setEmail("Zucerberg");
-        user.setPassword("password123");
+        userDTO = new UserDTO();
+        userDTO.setUserName("Mark");
+        userDTO.setEmail("zuckerberg@example.com");
+        userDTO.setPassword("password123");
+        userDTO.setRole(Collections.singleton("USER"));
     }
 
     @Test
     public void testRegisterUser_Success() throws SystemException {
-        // Подготовка данных
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-        when(userRepository.findByUserName(user.getUserName())).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(user.getPassword())).thenReturn("hashedpassword");
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.findByEmail(userDTO.getEmail())).thenReturn(Optional.empty());
+        when(userRepository.findByUserName(userDTO.getUserName())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(userDTO.getPassword())).thenReturn("hashedpassword");
+        when(userRepository.save(any(User.class))).thenReturn(convertToEntity(userDTO));
 
-        User registeredUser = userService.registerUser(user);
+        UserDTO registeredUser = userService.registerUser(userDTO);
 
         assertNotNull(registeredUser);
         assertEquals("testuser", registeredUser.getUserName());
         verify(passwordEncoder).encode(anyString());
         verify(userRepository).save(any(User.class));
-        verify(userRepository).findByEmail(user.getEmail());
-        verify(userRepository).findByUserName(user.getUserName());
+        verify(userRepository).findByEmail(userDTO.getEmail());
+        verify(userRepository).findByUserName(userDTO.getUserName());
     }
 
     @Test
     public void testRegisterUser_EmailAlreadyExists() throws SystemException {
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));  // Эмуляция существующего пользователя
+        when(userRepository.findByEmail(userDTO.getEmail())).thenReturn(Optional.of(convertToEntity(userDTO)));
 
-        User registeredUser = userService.registerUser(user);
+        UserDTO registeredUser = userService.registerUser(userDTO);
 
         assertNull(registeredUser, "Пользователь не должен быть зарегистрирован.");
-        verify(userRepository).findByEmail(user.getEmail());
+        verify(userRepository).findByEmail(userDTO.getEmail());
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     public void testRegisterUser_UsernameAlreadyExists() throws SystemException {
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-        when(userRepository.findByUserName(user.getUserName())).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(userDTO.getEmail())).thenReturn(Optional.empty());
+        when(userRepository.findByUserName(userDTO.getUserName())).thenReturn(Optional.of(convertToEntity(userDTO)));
 
-        User registeredUser = userService.registerUser(user);
+        UserDTO registeredUser = userService.registerUser(userDTO);
 
         assertNull(registeredUser, "Пользователь не должен быть зарегистрирован.");
-        verify(userRepository).findByUserName(user.getUserName());
+        verify(userRepository).findByUserName(userDTO.getUserName());
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    private User convertToEntity(UserDTO userDTO) {
+        if (userDTO == null) {
+            return null;
+        }
+        User user = new User();
+        user.setUserId(userDTO.getUserId());
+        user.setUserName(userDTO.getUserName());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setBirthdate(userDTO.getBirthdate());
+        user.setProfilePicture(userDTO.getProfilePicture());
+        user.setRole(userDTO.getRole());
+        return user;
     }
 }

@@ -1,6 +1,9 @@
 package org.example.socialnetwork.Controller;
 
 import org.example.socialnetwork.Config.MyUserDetails;
+import org.example.socialnetwork.DTO.CommunityDTO;
+import org.example.socialnetwork.DTO.CommunityMemberDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Community;
 import org.example.socialnetwork.Model.CommunityMember;
 import org.example.socialnetwork.Model.User;
@@ -30,13 +33,13 @@ public class CommunityController {
         logger.info("Проверка данных о сообществе. Название: {}, Описание: {}, Администратор: {}", communityName, description, userDetails.getUsername());
         Long adminId = ((MyUserDetails) userDetails).getUserId();
 
-        User admin = userService.findUserByIdAsOptional(adminId)
+        UserDTO admin = userService.findUserByIdAsOptional(adminId)
                 .orElseThrow(() -> {
                     logger.error("Администратор с ID {} не найден.", adminId);
                     return new RuntimeException("Администратор не найден");
                 });
 
-        Community community = communityService.createCommunity(communityName, description, admin);
+        CommunityDTO community = communityService.createCommunity(communityName, description, admin);
         logger.info("Сообщество успешно создано: {}", community.getCommunityName());
         return "redirect:/communities";
     }
@@ -44,7 +47,7 @@ public class CommunityController {
     @GetMapping
     public String getAllCommunities(Model model) {
         logger.info("Получение списка всех сообществ.");
-        List<Community> communities = communityService.getAllCommunities();
+        List<CommunityDTO> communities = communityService.getAllCommunities();
         model.addAttribute("communities", communities);
         logger.info("Количество сообществ получено: {}", communities.size());
         return "communities";
@@ -53,7 +56,7 @@ public class CommunityController {
     @PostMapping("/{communityId}/join")
     public String  joinCommunity(@PathVariable Long communityId, @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = ((MyUserDetails) userDetails).getUserId();
-        User user = userService.findUserByIdAsOptional(userId)
+        UserDTO user = userService.findUserByIdAsOptional(userId)
                 .orElseThrow(() -> {
                     logger.error("Пользователь с ID {} не найден.", userId);
                     return new RuntimeException("Пользователь не найден");
@@ -65,9 +68,9 @@ public class CommunityController {
     }
 
     @GetMapping("/{communityId}/members")
-    public List<CommunityMember> getMembers(@PathVariable Long communityId) {
+    public List<CommunityMemberDTO> getMembers(@PathVariable Long communityId) {
         logger.info("Получение участников сообщества с ID: {}", communityId);
-        List<CommunityMember> members = communityService.getMembers(communityId);
+        List<CommunityMemberDTO> members = communityService.getMembers(communityId);
         logger.info("Количество участников сообщества с ID {}: {}", communityId, members.size());
         return members;
     }

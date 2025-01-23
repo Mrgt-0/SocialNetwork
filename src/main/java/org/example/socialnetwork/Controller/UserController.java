@@ -33,12 +33,26 @@ public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        Optional<UserDTO> user = Optional.ofNullable(userService.findUserById(id));
+        logger.info("Пользователь с id: {} найден: {}", id, user.get().getUserName());
+        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/username/{username}")
+    public ResponseEntity<UserDTO> getUserByUserName(@PathVariable("username") String userName) {
+        Optional<UserDTO> user = Optional.ofNullable(userService.findByUserName(userName));
+        logger.info("Пользователь с именем: {} найде. ID: {}",userName,  user.get().getUserId());
+        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/profile")
     public String showProfileForm(Model model) {
         logger.info("Форма профиля отображается.");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUserName = auth.getName();
-        User user = userService.findByUserName(currentUserName);
+        UserDTO user = userService.findByUserName(currentUserName);
 
         if (user != null) {
             model.addAttribute("user", user);
@@ -50,10 +64,10 @@ public class UserController {
     }
 
     @PostMapping("/profile")
-    public String updateProfile(@ModelAttribute User updatedUser) throws SystemException {
+    public String updateProfile(@ModelAttribute UserDTO updatedUser) throws SystemException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUserName = auth.getName(); // Получаем текущее имя пользователя
-        userService.updateUser(currentUserName, updatedUser); // Обновляем пользователя на основе имени
+        String currentUserName = auth.getName();
+        userService.updateUser(currentUserName, updatedUser);
 
         if (!currentUserName.equals(updatedUser.getUserName())) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(updatedUser.getUserName());

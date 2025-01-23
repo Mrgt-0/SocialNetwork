@@ -2,6 +2,7 @@ package org.example.socialnetwork.Service;
 
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.UserRepository;
 import org.slf4j.Logger;
@@ -11,7 +12,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -25,35 +29,40 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User findUserById(Long userId) {
-        return userRepository.getById(userId);
+    public UserDTO findUserById(Long userId) {
+        User user = userRepository.getById(userId);
+        return convertToDTO(user);
     }
 
-    public Optional<User> findUserByIdAsOptional(Long id) {
-        return userRepository.findById(id);
+    public Optional<UserDTO> findUserByIdAsOptional(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        return user.map(this::convertToDTO);
     }
 
-    public User findByUserName(String userName) {
-        return userRepository.findByUserName(userName)
-            .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + userName));
+    public UserDTO findByUserName(String userName) {
+        User user = userRepository.findByUserName(userName)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + userName));
+        return convertToDTO(user);
     }
 
-    public User findByEmail(String email){
-        return userRepository.findByEmail(email)
+    public Optional<UserDTO> findUserByUserNameAsOptional(String userName){
+        Optional<User> user = userRepository.findByUserName(userName);
+        return user.map(this::convertToDTO);
+    }
+
+    public UserDTO findByEmail(String email){
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + email));
+        return convertToDTO(user);
     }
 
-    public void saveUser(User user) throws SystemException {
-        try{
-            userRepository.save(user);
-            logger.info("Пользователь успешно сохранен.");
-        }catch (Exception e){
-            logger.error("Ошибка при сохранении пользователя.", e.getMessage());
-        }
+    public List<UserDTO> findAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional
-    public void updateUser(String userName, User updatedUser) throws SystemException {
+    public void updateUser(String userName, UserDTO updatedUser) throws SystemException {
         userRepository.findByUserName(userName)
                 .map(user -> {
                     user.setUserName(updatedUser.getUserName());
@@ -67,36 +76,72 @@ public class UserService {
     }
 
     @Transactional
-    public User registerUser(User user) throws SystemException {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            logger.error("Пользователь с таким email уже существует.");
-            return null;
-        }
+    public UserDTO registerUser(UserDTO userDTO) throws SystemException {
+        logger.info("Регистрация пользователя с email: {}", userDTO.getEmail());
 
-        if (userRepository.findByUserName(user.getUserName()).isPresent()) {
+        if (userRepository.findByEmail(userDTO.getEmail()).isPresent())
+            throw new RuntimeException("Пользователь с таким email уже существует: " + userDTO.getEmail());
+
+        if (userRepository.findByUserName(userDTO.getUserName()).isPresent()) {
             logger.error("Пользователь с таким именем пользователя уже существует.");
             return null;
         }
+        String encodedPassword = passwordEncoder.encode(userDTO.getPassword());
+        userDTO.setPassword(encodedPassword);
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole(Collections.singleton("USER"));
-            logger.info("Пользователь: {}", user);
-            logger.info("Роли перед сохранением: {}", user.getRole());
-        }
+        if (userDTO.getRole() == null || userDTO.getRole().isEmpty())
+            userDTO.setRole(Collections.singleton("ADMIN"));
 
-        User registredUser = userRepository.save(user);
-        logger.info("Пользователь успешно зарегистрирован.");
-        return registredUser;
+        User registredUser = convertToEntity(userDTO);
+        registredUser = userRepository.save(registredUser);
+        logger.info("Пользователь успешно зарегистрирован: {}", registredUser.getEmail());
+        return convertToDTO(registredUser);
     }
 
-    @Transactional
-    public void deleteUser(User user) {
-        if (user != null) {
-            userRepository.delete(user);
-            logger.info("Пользователь успешно удален.");
+    public void deleteUserById(Long userId) {
+        userRepository.deleteById(userId);
+        logger.info("Пользователь с ID {} успешно удален.", userId);
+    }
+
+    public void changeUserRole(Long userId, Set<String> newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        user.setRole(newRole);
+        userRepository.save(user);
+        logger.info("Роль пользователя с ID {} изменена на {}", userId, newRole);
+    }
+
+    private UserDTO convertToDTO(User user) {
+        if (user == null) {
+            return null;
         }
-        else
-            logger.error("Пользователь не найден.");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUserId(user.getUserId());
+        userDTO.setUserName(user.getUserName());
+        userDTO.setFirstName(user.getFirstName());
+        userDTO.setLastName(user.getLastName());
+        userDTO.setPassword(user.getPassword());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setBirthdate(user.getBirthdate());
+        userDTO.setProfilePicture(user.getProfilePicture());
+        userDTO.setRole(user.getRole());
+        return userDTO;
+    }
+
+    private User convertToEntity(UserDTO userDTO) {
+        if (userDTO == null) {
+            return null;
+        }
+        User user = new User();
+        user.setUserId(userDTO.getUserId());
+        user.setUserName(userDTO.getUserName());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setBirthdate(userDTO.getBirthdate());
+        user.setProfilePicture(userDTO.getProfilePicture());
+        user.setRole(userDTO.getRole());
+        return user;
     }
 }

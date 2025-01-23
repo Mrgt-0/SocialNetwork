@@ -1,7 +1,10 @@
 package test.Controller;
 
 import org.example.socialnetwork.Controller.PostController;
+import org.example.socialnetwork.DTO.PostDTO;
+import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Post;
+import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,26 +51,26 @@ public class PostControllerTest {
     void testShowPostCreateForm() {
         String viewName = postController.showPostCreateForm(model);
         assertEquals("createPost", viewName);
-        verify(model).addAttribute("post", new Post());
+        verify(model).addAttribute("post", new PostDTO());
     }
 
     @Test
     void testShowAllPosts() {
-        List<Post> posts = new ArrayList<>();
-        posts.add(new Post());
+        List<PostDTO> posts = new ArrayList<>();
+        posts.add(new PostDTO());
         when(postService.getAllPosts()).thenReturn(posts);
 
         String viewName = postController.showAllPosts(model);
         assertEquals("allPosts", viewName);
         verify(model).addAttribute("posts", posts);
-        for (Post post : posts) {
+        for (PostDTO post : posts) {
             assertNotNull(post.getText());
         }
     }
 
     @Test
     void testPublicationPostWithFile() throws IOException {
-        Post post = new Post();
+        PostDTO post = new PostDTO();
         post.setText("Test post");
         when(file.isEmpty()).thenReturn(false);
         when(file.getOriginalFilename()).thenReturn("test.png");
@@ -82,7 +85,7 @@ public class PostControllerTest {
 
     @Test
     void testPublicationPostWithEmptyFile() {
-        Post post = new Post();
+        PostDTO post = new PostDTO();
 
         when(file.isEmpty()).thenReturn(true);
 
