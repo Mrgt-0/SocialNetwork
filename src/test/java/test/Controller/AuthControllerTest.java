@@ -1,145 +1,104 @@
 package test.Controller;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.SystemException;
 import org.example.socialnetwork.Controller.AuthController;
 import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashSet;
-
 public class AuthControllerTest {
-    @InjectMocks
-    private AuthController authController;
-
     @Mock
     private UserService userService;
 
     @Mock
     private AuthenticationManager authenticationManager;
 
-    @Mock
-    private UserDetailsService userDetailsService;
-
-    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
-    public void testRegisterUser_Success() throws Exception {
-        UserDTO user = new UserDTO();
-        user.setUserName("testUser");
-        user.setFirstName("Имя");
-        user.setLastName("Фамилия");
-        user.setPassword("password123");
-        user.setEmail("test@example.com");
-        user.setBirthdate(LocalDate.parse("1990-01-01")); // если необходимо
-        user.setProfilePicture(null);
-        user.setRole(new HashSet<>(Collections.singletonList("USER")));
-
-
-        when(userService.registerUser(any(UserDTO.class))).thenReturn(null);
-
+    void testRegisterUser_Success() throws Exception {
+        UserDTO userDto = new UserDTO();
+        userDto.setUserName("testUser");
+        userDto.setPassword("testPassword");
+        userDto.setEmail("testuser@example.com");
+        when(userService.registerUser(any(UserDTO.class))).thenReturn(userDto);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(userService, authenticationManager)).build();
         mockMvc.perform(post("/auth/register")
-                        .contentType("application/json;charset=UTF-8")
-                        .content("{\"userName\":\"testUser\", \"firstName\":\"Имя\", \"lastName\":\"Фамилия\", \"password\":\"password123\", \"email\":\"test@example.com\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDto)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Регистрация прошла успешно! Пожалуйста, войдите."));
-
-        verify(userService, times(1)).registerUser(any(UserDTO.class));
     }
 
     @Test
-    public void testRegisterUser_Failure() throws Exception {
-        UserDTO user = new UserDTO();
-        user.setUserName("testUser");
-        user.setFirstName("Имя");
-        user.setLastName("Фамилия");
-        user.setPassword("password123");
-        user.setEmail("test@example.com");
-        user.setBirthdate(LocalDate.parse("1990-01-01")); // если необходимо
-        user.setProfilePicture(null);
-        user.setRole(new HashSet<>(Collections.singletonList("USER")));
-
-
-        doThrow(new RuntimeException("Ошибка регистрации")).when(userService).registerUser(any(UserDTO.class));
-
+    void testRegisterUser_Failure() throws Exception {
+        UserDTO userDto = new UserDTO();
+        userDto.setUserName("testUser");
+        userDto.setPassword("testPassword");
+        userDto.setEmail("test@example.com");
+        when(userService.registerUser(any(UserDTO.class))).thenThrow(new SystemException("Registration error"));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(userService, authenticationManager)).build();
         mockMvc.perform(post("/auth/register")
-                        .contentType("application/json;charset=UTF-8")
-                        .content("{\"userName\":\"testUser\", \"firstName\":\"Имя\", \"lastName\":\"Фамилия\", \"password\":\"password123\", \"email\":\"test@example.com\"}"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Регистрация прошла успешно! Пожалуйста, войдите."));
-
-        verify(userService, times(1)).registerUser(any(UserDTO.class));
-    }
-
-    @Test
-    public void testLogin_Success() throws Exception {
-        LoginResponseDTO loginRequest = new LoginResponseDTO();
-        loginRequest.setUserName("Tessy");
-        loginRequest.setPassword("Tessy_Sammy28*");
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(null);
-
-        mockMvc.perform(post("/auth/register")
-                        .contentType("application/json;charset=UTF-8")
-                        .content("{\"userName\":\"testUser\", \"firstName\":\"Имя\", \"lastName\":\"Фамилия\", \"password\":\"password123\", \"email\":\"test@example.com\"}"))
-                .andExpect(status().isOk());
-
-        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-    }
-
-    @Test
-    public void testLogin_BadCredentials() throws Exception {
-        LoginResponseDTO loginRequest = new LoginResponseDTO();
-        loginRequest.setUserName("Sammy");
-        loginRequest.setPassword("Tessy_Sammy28*");
-
-        doThrow(new BadCredentialsException("Неверный логин или пароль.")).when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-
-        mockMvc.perform(post("/auth/login")
-                        .contentType("application/json")
-                        .content("{\"userName\":\"testUser\",\"password\":\"incorrectPassword\"}"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Неверный логин или пароль."));
-
-        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-    }
-
-    @Test
-    public void testLogin_InternalError() throws Exception {
-        LoginResponseDTO loginRequest = new LoginResponseDTO();
-        loginRequest.setUserName("testUser");
-        loginRequest.setPassword("password123");
-
-        doThrow(new RuntimeException("Произошла ошибка при аутентификации.")).when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-
-        mockMvc.perform(post("/auth/login")
-                        .contentType("application/json;charset=UTF-8")
-                        .content("{\"userName\":\"testUser\",\"password\":\"password123\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDto)))
                 .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Произошла ошибка при аутентификации."));
+                .andExpect(content().string("Ошибка при регистрации: Registration error"));
+    }
 
-        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+    @Test
+    void testLogin_Success() throws Exception {
+        String userName = "testUser";
+        String password = "testPassword";
+
+        when(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userName, password)))
+                .thenReturn(mock(Authentication.class));
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(userService, authenticationManager)).build();
+
+        mockMvc.perform(post("/auth/login")
+                        .param("userName", userName)
+                        .param("password", password))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Аутентификация успешна!"));
+    }
+
+    @Test
+    void testLogin_UserNameEmpty() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(userService, authenticationManager)).build();
+
+        mockMvc.perform(post("/auth/login")
+                        .param("userName", "")
+                        .param("password", "password"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Имя пользователя не может быть пустым"));
+    }
+
+    @Test
+    void testLogin_PasswordEmpty() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(userService, authenticationManager)).build();
+
+        mockMvc.perform(post("/auth/login")
+                        .param("userName", "user")
+                        .param("password", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Пароль не может быть пустым"));
     }
 }

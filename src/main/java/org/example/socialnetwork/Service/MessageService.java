@@ -34,11 +34,6 @@ public class MessageService {
         messageRepository.save(message);
     }
 
-    public void saveMessage(MessageDTO messageDTO){
-        Message message=convertToEntity(messageDTO);
-        messageRepository.save(message);
-    }
-
     public List<MessageDTO> getMessages(UserDTO senderDTO, UserDTO recipientDTO) {
         User sender = userRepository.findByUserName(senderDTO.getUserName())
                 .orElseThrow(() -> new RuntimeException("Отправитель не найден"));

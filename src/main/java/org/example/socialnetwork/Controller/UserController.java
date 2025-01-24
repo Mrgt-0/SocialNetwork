@@ -1,9 +1,7 @@
 package org.example.socialnetwork.Controller;
 
 import jakarta.transaction.SystemException;
-import jakarta.validation.Valid;
 import org.example.socialnetwork.DTO.UserDTO;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.UserDetailsServiceImpl;
 import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
@@ -11,15 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
 
@@ -36,9 +31,14 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        Optional<UserDTO> user = Optional.ofNullable(userService.findUserById(id));
-        logger.info("Пользователь с id: {} найден: {}", id, user.get().getUserName());
-        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        UserDTO user = userService.findUserById(id);
+        if (user != null) {
+            logger.info("Пользователь с id: {} найден: {}", id, user.getUserName());
+            return ResponseEntity.ok(user);
+        } else {
+            logger.warn("Пользователь с id: {} не найден.", id);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/username/{username}")
@@ -63,11 +63,14 @@ public class UserController {
     }
 
     @PostMapping("/profile")
-    public ResponseEntity<String> updateProfile(@RequestBody UserDTO updatedUser) throws SystemException {
+    public ResponseEntity<String> updateProfile(@RequestParam("userName") String userName,
+                                                @RequestParam("email") String email,
+                                                @RequestParam("firstName") String firstName,
+                                                @RequestParam("lastName") String lastName) throws SystemException {
         logger.info("Открыта форма редактирования данных профиля.");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if(auth == null || auth.getName() == null) {
+        if (auth == null || auth.getName() == null) {
             logger.warn("Клиент не аутентифицирован.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Пользователь не аутентифицирован.");
@@ -81,7 +84,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Пользователь не найден.");
         }
-
+        UserDTO updatedUser = new UserDTO(userName, email, firstName, lastName);
         logger.info("Обновление данных пользователя: {}", currentUserName);
 
         userService.updateUser(currentUserName, updatedUser);

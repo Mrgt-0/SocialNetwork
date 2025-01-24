@@ -1,30 +1,25 @@
 package test.Controller;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.Controller.FriendController;
 import org.example.socialnetwork.DTO.FriendDTO;
 import org.example.socialnetwork.DTO.UserDTO;
-import org.example.socialnetwork.Model.Friend;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.FriendService;
 import org.example.socialnetwork.Service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.ui.Model;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
-
+@ExtendWith(MockitoExtension.class)
 public class FriendControllerTest {
     @InjectMocks
     private FriendController friendController;
@@ -36,54 +31,45 @@ public class FriendControllerTest {
     private UserService userService;
 
     @Mock
-    private Model model;
-
-    @Mock
     private Authentication authentication;
 
     @Mock
-    private MyUserDetails myUserDetails;
+    private MyUserDetails userDetails;
 
-    private MockMvc mockMvc;
+    private UserDTO currentUser;
 
     @BeforeEach
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(friendController).build();
+    public void setup() {
+        currentUser = new UserDTO();
+        currentUser.setUserId(1L);
+        currentUser.setUserName("CurrentUser");
+
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(userDetails.getUser()).thenReturn(currentUser);
     }
 
     @Test
-    public void testShowFriends() throws Exception {
-        UserDTO user = new UserDTO();
-        when(authentication.getPrincipal()).thenReturn(myUserDetails);
-        when(myUserDetails.getUser()).thenReturn(user);
-
-        List<FriendDTO> friends = Collections.emptyList();
-        when(friendService.getFriends(user)).thenReturn(friends);
-
-        mockMvc.perform(get("/friends").principal(() -> "username"))
-                .andExpect(status().isOk())
-                .andExpect(model().attribute("friends", friends))
-                .andExpect(view().name("friends"));
+    public void testShowFriends() {
+        FriendDTO friend1 = new FriendDTO();
+        FriendDTO friend2 = new FriendDTO();
+        when(friendService.getFriends(currentUser)).thenReturn(Arrays.asList(friend1, friend2));
+        ResponseEntity<List<FriendDTO>> response = friendController.showFriends(authentication);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(2, response.getBody().size());
+        verify(friendService, times(1)).getFriends(currentUser);
     }
 
     @Test
-    public void testAddFriend() throws Exception {
-        UserDTO currentUser = new UserDTO();
-        UserDTO friend = new UserDTO();
-        String userName = "friendUsername";
-
-        when(authentication.getPrincipal()).thenReturn(myUserDetails);
-        when(myUserDetails.getUser()).thenReturn(currentUser);
-        when(userService.findByUserName(userName)).thenReturn(friend);
-
-        mockMvc.perform(post("/friends/add")
-                        .param("userName", userName)
-                        .principal(() -> "username"))
-                .andExpect(status().isOk())
-                .andExpect(model().attributeExists("friends"))
-                .andExpect(view().name("friends"));
-
-        verify(friendService).addFriend(currentUser, friend);
+    public void testAddFriend() {
+        String friendUserName = "FriendUser";
+        UserDTO friendUser = new UserDTO();
+        friendUser.setUserId(2L);
+        friendUser.setUserName(friendUserName);
+        when(userService.findByUserName(friendUserName)).thenReturn(friendUser);
+        ResponseEntity<String> response = friendController.addFriend(friendUserName, authentication);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Пользователь успешно добавлен в друзья!", response.getBody());
+        verify(friendService, times(1)).addFriend(currentUser, friendUser);
+        verify(userService, times(1)).findByUserName(friendUserName);
     }
 }

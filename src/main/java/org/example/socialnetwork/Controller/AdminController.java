@@ -2,13 +2,12 @@ package org.example.socialnetwork.Controller;
 
 import org.example.socialnetwork.Service.CommunityService;
 import org.example.socialnetwork.Service.PostService;
-import org.example.socialnetwork.Service.UserDetailsServiceImpl;
 import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Set;
@@ -18,9 +17,6 @@ import java.util.Set;
 public class AdminController {
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private PostService postService;
@@ -34,65 +30,36 @@ public class AdminController {
     public ResponseEntity<String> changeUserRole(@RequestParam("userId") Long userId,
                                                  @RequestParam("newRole") Set<String> newRole,
                                                  RedirectAttributes redirectAttributes) {
-        try {
-            userService.changeUserRole(userId, newRole);
-            redirectAttributes.addFlashAttribute("success", "Роль пользователя изменена успешно!");
-            logger.info("Роль пользователя с ID {} изменена на {}", userId, newRole);
-            return ResponseEntity.ok("Роль пользователя изменена успешно!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Не удалось изменить роль пользователя.");
-            logger.error("Ошибка при изменении роли пользователя с ID {}: {}", userId, e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Не удалось изменить роль пользователя.");
-        }
+        userService.changeUserRole(userId, newRole);
+        redirectAttributes.addFlashAttribute("success", "Роль пользователя изменена успешно!");
+        logger.info("Роль пользователя с ID {} изменена на {}", userId, newRole);
+        return ResponseEntity.ok("Роль пользователя изменена успешно!");
     }
 
     @PostMapping("/delete-user")
     public ResponseEntity<String> deleteUser(@RequestParam("userId") Long userId,
-                             RedirectAttributes redirectAttributes) {
-        try {
-            userService.deleteUserById(userId);
-            redirectAttributes.addFlashAttribute("success", "Пользователь успешно удален!");
-            logger.info("Пользователь с ID {} успешно удален.", userId);
-            return ResponseEntity.ok("Пользователь успешно удален!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Не удалось удалить пользователя.");
-            logger.error("Ошибка при удалении пользователя с ID {}: {}", userId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Не удалось удалить пользователя.");
-        }
+                                             RedirectAttributes redirectAttributes) {
+        userService.deleteUserById(userId);
+        redirectAttributes.addFlashAttribute("success", "Пользователь успешно удален!");
+        logger.info("Пользователь с ID {} успешно удален.", userId);
+        return ResponseEntity.ok("Пользователь успешно удален!");
     }
 
     @PostMapping("/delete-post")
     public ResponseEntity<String> deletePost(@RequestParam("postId") Long postId,
-                             RedirectAttributes redirectAttributes) {
-        try {
-            postService.deletePostById(postId);
-            redirectAttributes.addFlashAttribute("success", "Пост успешно удален!");
-            logger.info("Пост с ID {} успешно удален.", postId);
-            return ResponseEntity.ok("Пост успешно удален!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Не удалось удалить пост.");
-            logger.error("Ошибка при удалении поста с ID {}: {}", postId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Не удалось удалить пост.");
-        }
+                                             RedirectAttributes redirectAttributes) {
+        postService.deletePostById(postId);
+        redirectAttributes.addFlashAttribute("success", "Пост успешно удален!");
+        logger.info("Пост с ID {} успешно удален.", postId);
+        return ResponseEntity.ok("Пост успешно удален!");
     }
 
     @PostMapping("/delete-community")
     public ResponseEntity<String> deleteCommunity(@RequestParam("communityId") Long communityId,
-                              RedirectAttributes redirectAttributes) {
-        try {
-            communityService.deleteCommunity(communityId);
-            redirectAttributes.addFlashAttribute("success", "Группа успешно удалена!");
-            logger.info("Группа с ID {} успешно удалена.", communityId);
-            return ResponseEntity.ok("Группа успешно удалена!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Не удалось удалить группу.");
-            logger.error("Ошибка при удалении группы с ID {}: {}", communityId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Не удалось удалить группу.");
-        }
+                                                  RedirectAttributes redirectAttributes) {
+        communityService.deleteCommunity(communityId);
+        redirectAttributes.addFlashAttribute("success", "Группа успешно удалена!");
+        logger.info("Группа с ID {} успешно удалена.", communityId);
+        return ResponseEntity.ok("Группа успешно удалена!");
     }
 }

@@ -1,27 +1,27 @@
 package org.example.socialnetwork.Service;
-
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.User;
+import org.example.socialnetwork.Repository.FriendRepository;
 import org.example.socialnetwork.Repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private FriendRepository friendRepository;
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -43,22 +43,6 @@ public class UserService {
         User user = userRepository.findByUserName(userName)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + userName));
         return convertToDTO(user);
-    }
-
-    public Optional<UserDTO> findUserByUserNameAsOptional(String userName){
-        Optional<User> user = userRepository.findByUserName(userName);
-        return user.map(this::convertToDTO);
-    }
-
-    public UserDTO findByEmail(String email){
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + email));
-        return convertToDTO(user);
-    }
-
-    public List<UserDTO> findAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Transactional
@@ -99,8 +83,17 @@ public class UserService {
     }
 
     public void deleteUserById(Long userId) {
-        userRepository.deleteById(userId);
-        logger.info("Пользователь с ID {} успешно удален.", userId);
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            UserDTO userDTO = convertToDTO(user);
+            userRepository.delete(convertToEntity(userDTO));
+            logger.info("Пользователь {} успешно удален.", user.getUserName());
+        } else {
+            logger.error("Пользователь с ID {} не найден, удаление невозможно.", userId);
+
+        }
     }
 
     public void changeUserRole(Long userId, Set<String> newRole) {

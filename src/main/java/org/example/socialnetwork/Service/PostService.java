@@ -13,11 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -83,6 +80,9 @@ public class PostService {
 
     @Transactional
     public void deletePostById(Long postId){
+        if (postId == null)
+            throw new IllegalArgumentException("ID поста не может быть null.");
+
         postRepository.deleteById(postId);
         logger.info("Пост с ID {} успешно удален.", postId);
     }

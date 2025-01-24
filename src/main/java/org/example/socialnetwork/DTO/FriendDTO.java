@@ -1,11 +1,5 @@
 package org.example.socialnetwork.DTO;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import org.example.socialnetwork.Model.User;
-
 import java.time.LocalDateTime;
 
 public class FriendDTO {
@@ -16,12 +10,6 @@ public class FriendDTO {
 
     public FriendDTO() {}
 
-    public FriendDTO(Long id, User user, User friend, LocalDateTime created_at){
-        this.id=id;
-        this.user=user;
-        this.friend=friend;
-        this.created_at=created_at;
-    }
     public Long getFriend_id() { return id; }
 
     public void setFriend_id(Long id) { this.id = id; }

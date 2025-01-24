@@ -2,17 +2,14 @@ package org.example.socialnetwork.Service;
 
 import jakarta.transaction.Transactional;
 import org.example.socialnetwork.DTO.FriendDTO;
-import org.example.socialnetwork.DTO.PostDTO;
 import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Friend;
-import org.example.socialnetwork.Model.Post;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.FriendRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,20 +23,21 @@ public class FriendService {
 
     @Transactional
     public void addFriend(UserDTO user, UserDTO friend) {
-        if (friendRepository.findByUserAndFriend(convertToEntity(user), convertToEntity(friend)) != null)
+        Friend friendship = friendRepository.findByUserAndFriend(convertToEntity(user), convertToEntity(friend));
+        if (friendship != null)
             throw new RuntimeException("Уже в друзьях");
 
-        FriendDTO friendship1 = new FriendDTO();
-        friendship1.setUser(convertToEntity(user));
-        friendship1.setFriend(convertToEntity(friend));
-        friendship1.setCreated_at(LocalDateTime.now());
-        friendRepository.save(convertToEntity(friendship1));
+        Friend newFriendship1 = new Friend();
+        newFriendship1.setUser(convertToEntity(user));
+        newFriendship1.setFriend(convertToEntity(friend));
+        newFriendship1.setCreated_at(LocalDateTime.now());
+        friendRepository.save(newFriendship1);
 
-        FriendDTO friendship2 = new FriendDTO();
-        friendship2.setUser(convertToEntity(friend));
-        friendship2.setFriend(convertToEntity(user));
-        friendship2.setCreated_at(LocalDateTime.now());
-        friendRepository.save(convertToEntity(friendship2));
+        Friend newFriendship2 = new Friend();
+        newFriendship2.setUser(convertToEntity(friend));
+        newFriendship2.setFriend(convertToEntity(user));
+        newFriendship2.setCreated_at(LocalDateTime.now());
+        friendRepository.save(newFriendship2);
     }
 
     public List<FriendDTO> getFriends(UserDTO user) {
@@ -53,11 +51,17 @@ public class FriendService {
 
     @Transactional
     public void deleteFriend(FriendDTO friend){
-        if(friend!=null){
-            friendRepository.delete(convertToEntity(friend));
-            logger.info("Пользователь {} успешно удален.", friend.getUser().getUserName());
-        }else
-            logger.error("Пользователь {} не найден.", friend.getUser().getUserName());
+        if (friend != null) {
+            Friend existingFriend = friendRepository.findByUserAndFriend(friend.getUser(), friend.getFriend());
+            if (existingFriend != null) {
+                friendRepository.delete(existingFriend);
+                logger.info("Пользователь {} успешно удален.", friend.getUser().getUserName());
+            } else {
+                logger.error("Друг не найден, не удалось удалить.");
+            }
+        } else {
+            logger.error("friend is null, cannot delete.");
+        }
     }
 
     private User convertToEntity(UserDTO userDTO) {

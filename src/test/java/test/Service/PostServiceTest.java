@@ -3,7 +3,6 @@ package test.Service;
 import org.example.socialnetwork.DTO.PostDTO;
 import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Post;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.PostRepository;
 import org.example.socialnetwork.Service.PostService;
 import org.example.socialnetwork.Service.UserService;
@@ -11,14 +10,13 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -50,31 +48,31 @@ public class PostServiceTest {
     void testSavePost() {
         PostDTO post = new PostDTO();
         post.setText("Test post");
-
-        postService.savePost(convertToEntity(post));
-
-        verify(postRepository).save(convertToEntity(post));
+        Post postEntity = convertToEntity(post);
+        postService.savePost(postEntity);
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(postCaptor.capture());
+        assertEquals(postEntity.getText(), postCaptor.getValue().getText());
     }
 
     @Test
     void testPublicationPostWhenUserIsAuthenticated() {
         PostDTO post = new PostDTO();
         post.setText("Test post");
-
         UserDTO currentUser = new UserDTO();
         currentUser.setUserName("testUser");
-
         when(authentication.isAuthenticated()).thenReturn(true);
         when(userDetails.getUsername()).thenReturn("testUser");
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userService.findByUserName("testUser")).thenReturn(currentUser);
-        when(postRepository.save(convertToEntity(post))).thenReturn(convertToEntity(post));
-
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+            Post savedPost = invocation.getArgument(0);
+            return savedPost;
+        });
         Post publishedPost = postService.publicationPost(post);
-
         assertNotNull(publishedPost);
         assertEquals("testUser", publishedPost.getUser().getUserName());
-        verify(postRepository).save(convertToEntity(post));
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test
@@ -105,20 +103,22 @@ public class PostServiceTest {
     @Test
     void testUpdatedPostWhenPostExists() {
         Long postId = 1L;
-        PostDTO existingPost = new PostDTO();
-        existingPost.setPostId(postId);
-        existingPost.setText("Old text");
-
+        PostDTO existingPostDTO = new PostDTO();
+        existingPostDTO.setPostId(postId);
+        existingPostDTO.setText("Old text");
         PostDTO updatedPostDetails = new PostDTO();
         updatedPostDetails.setText("Updated text");
-
-        when(postRepository.findPostById(postId)).thenReturn(Optional.of(convertToEntity(existingPost)));
-        when(postRepository.save(convertToEntity(existingPost))).thenReturn(convertToEntity(existingPost));
-
+        Post existingPostEntity = convertToEntity(existingPostDTO);
+        when(postRepository.findPostById(postId)).thenReturn(Optional.of(existingPostEntity));
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+            Post savedPost = invocation.getArgument(0);
+            return savedPost;
+        });
         PostDTO updatedPost = postService.updatedPost(postId, updatedPostDetails);
         assertEquals("Updated text", updatedPost.getText());
+        assertNotNull(updatedPost.getUpdated_at());
         assertEquals(LocalDateTime.now().getMinute(), updatedPost.getUpdated_at().getMinute());
-        verify(postRepository).save(convertToEntity(existingPost));
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test
@@ -147,10 +147,10 @@ public class PostServiceTest {
 
     @Test
     void testDeletePostWhenPostIsNull() {
-        PostDTO post = null;
-
-        postService.deletePostById(post.getPostId());
-
+        Long postId = null;
+        assertThrows(IllegalArgumentException.class, () -> {
+            postService.deletePostById(postId);
+        });
         verify(postRepository, never()).deleteById(any());
     }
 

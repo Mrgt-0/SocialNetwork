@@ -1,11 +1,6 @@
 package org.example.socialnetwork.DTO;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import org.example.socialnetwork.Model.Community;
 import org.example.socialnetwork.Model.User;
-
 import java.time.LocalDateTime;
 
 public class CommunityMemberDTO {
@@ -15,12 +10,6 @@ public class CommunityMemberDTO {
     private LocalDateTime joined_at;
 
     public CommunityMemberDTO() {}
-
-    public CommunityMemberDTO(Community community, User user, LocalDateTime joined_at){
-        this.community=community;
-        this.user=user;
-        this.joined_at=joined_at;
-    }
 
     public Long getId() { return id; }
 

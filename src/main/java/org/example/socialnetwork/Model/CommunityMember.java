@@ -1,7 +1,6 @@
 package org.example.socialnetwork.Model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity

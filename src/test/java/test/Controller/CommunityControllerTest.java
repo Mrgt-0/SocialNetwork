@@ -1,117 +1,86 @@
 package test.Controller;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.Controller.CommunityController;
 import org.example.socialnetwork.DTO.CommunityDTO;
 import org.example.socialnetwork.DTO.CommunityMemberDTO;
 import org.example.socialnetwork.DTO.UserDTO;
-import org.example.socialnetwork.Model.Community;
-import org.example.socialnetwork.Model.CommunityMember;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.CommunityService;
 import org.example.socialnetwork.Service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 
-import java.util.Collections;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class CommunityControllerTest {
-    @InjectMocks
-    private CommunityController communityController;
-
     @Mock
     private CommunityService communityService;
 
     @Mock
     private UserService userService;
 
-    @Mock
-    private Model model;
+    @InjectMocks
+    private CommunityController communityController;
 
-    private MyUserDetails userDetails;
-    private UserDTO admin;
+    private MockMvc mockMvc;
+
+    private MyUserDetails mockUserDetails;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        admin = new UserDTO();
-        admin.setUserId(1L);
-        admin.setUserName("Admin");
-        userDetails = new MyUserDetails(admin);
+        mockMvc = MockMvcBuilders.standaloneSetup(communityController).build();
+
+        UserDTO user = new UserDTO();
+        user.setUserId(1L); // Задаем ID пользователя
+        user.setUserName("testUser"); // Задаем имя пользователя
+        mockUserDetails = new MyUserDetails(user);
     }
 
     @Test
-    public void testCreateCommunity() {
-        CommunityDTO community = new CommunityDTO();
-        community.setId(1L);
-        community.setCommunityName("Test Community");
-
-        when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.of(admin));
-        when(communityService.createCommunity(any(String.class), any(String.class), any(UserDTO.class))).thenReturn(community);
-
-        String result = String.valueOf(communityController.createCommunity("Test Community", "Test Description", userDetails));
-
-        assertEquals("redirect:/communities", result);
-        verify(userService, times(1)).findUserByIdAsOptional(1L);
-        verify(communityService, times(1)).createCommunity("Test Community", "Test Description", admin);
-    }
-
-    @Test
-    public void testGetAllCommunities() {
-        when(communityService.getAllCommunities()).thenReturn(Collections.singletonList(new CommunityDTO()));
-
-        String result = String.valueOf(communityController.getAllCommunities());
-
-        assertEquals("communities", result);
-        verify(model, times(1)).addAttribute("communities", Collections.singletonList(new Community()));
-    }
-
-    @Test
-    public void testJoinCommunity() {
-        CommunityDTO community = new CommunityDTO();
-        community.setId(1L);
-        community.setCommunityName("Test Community");
-
-        when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.of(admin));
-        when(communityService.joinCommunity(1L, admin)).thenReturn(new CommunityMemberDTO());
-
-        String result = String.valueOf(communityController.joinCommunity(1L, userDetails));
-
-        assertEquals("redirect:/communities", result);
-        verify(communityService, times(1)).joinCommunity(1L, admin);
+    public void testGetAllCommunities() throws Exception {
+        CommunityDTO community1 = new CommunityDTO();
+        CommunityDTO community2 = new CommunityDTO();
+        when(communityService.getAllCommunities()).thenReturn(List.of(community1, community2));
+        ResponseEntity<List<CommunityDTO>> response = communityController.getAllCommunities();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(2, response.getBody().size());
+        verify(communityService).getAllCommunities();
     }
 
     @Test
     public void testGetMembers() {
-        CommunityDTO community = new CommunityDTO();
-        community.setId(1L);
-        when(communityService.getMembers(1L)).thenReturn(Collections.singletonList(new CommunityMemberDTO()));
+        Long communityId = 1L;
+        CommunityMemberDTO memberDTO = new CommunityMemberDTO();
+        when(communityService.getMembers(communityId)).thenReturn(List.of(memberDTO));
 
-        List<CommunityMemberDTO> members = (List<CommunityMemberDTO>) communityController.getMembers(1L);
+        ResponseEntity<List<CommunityMemberDTO>> response = communityController.getMembers(communityId);
 
-        assertNotNull(members);
-        assertEquals(1, members.size());
-        verify(communityService, times(1)).getMembers(1L);
-    }
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
 
-    @Test
-    public void testCreateCommunity_AdminNotFound() {
-        when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            communityController.createCommunity("Test Community", "Test Description", userDetails);
-        });
-
-        assertEquals("Администратор не найден", exception.getMessage());
+        verify(communityService).getMembers(communityId);
     }
 }

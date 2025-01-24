@@ -5,12 +5,15 @@ import org.example.socialnetwork.DTO.UserDTO;
 import org.example.socialnetwork.Model.Message;
 import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Repository.MessageRepository;
+import org.example.socialnetwork.Repository.UserRepository;
 import org.example.socialnetwork.Service.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -19,12 +22,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@ExtendWith(MockitoExtension.class)
 public class MessageServiceTest {
-    @InjectMocks
-    private MessageService messageService;
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private MessageRepository messageRepository;
+
+    @InjectMocks
+    private MessageService messageService;
 
     private UserDTO senderDTO;
     private UserDTO recipientDTO;
@@ -45,20 +52,44 @@ public class MessageServiceTest {
 
     @Test
     public void testSendMessage() {
-        messageService.sendMessage(senderDTO, recipientDTO, "Hello!");
+        UserDTO senderDTO = new UserDTO();
+        senderDTO.setUserName("user1");
+        UserDTO recipientDTO = new UserDTO();
+        recipientDTO.setUserName("user2");
+        User sender = new User();
+        User recipient = new User();
 
+        when(userRepository.findByUserName("user1")).thenReturn(Optional.of(sender));
+        when(userRepository.findByUserName("user2")).thenReturn(Optional.of(recipient));
+        messageService.sendMessage(senderDTO, recipientDTO, "Hello!");
         verify(messageRepository, times(1)).save(any(Message.class));
     }
 
     @Test
     public void testGetMessages() {
+        UserDTO senderDTO = new UserDTO();
+        senderDTO.setUserName("user1");
+        UserDTO recipientDTO = new UserDTO();
+        recipientDTO.setUserName("user2");
+        User sender = new User();
+        sender.setUserName("user1");
+        User recipient = new User();
+        recipient.setUserName("user2");
+        when(userRepository.findByUserName("user1")).thenReturn(Optional.of(sender));
+        when(userRepository.findByUserName("user2")).thenReturn(Optional.of(recipient));
+
+        Message message = new Message();
+        message.setText("Hello!");
+        message.setSender(sender);
+        message.setRecipient(recipient);
+
         List<Message> messages = new ArrayList<>();
-        messages.add(convertToEntity(messageDTO));
+        messages.add(message);
 
-        when(messageRepository.findMessagesBySenderAndRecipient(convertToEntity(senderDTO), convertToEntity(recipientDTO)))
+        when(messageRepository.findMessagesBySenderAndRecipient(sender, recipient))
                 .thenReturn(messages);
-
         List<MessageDTO> resultMessagesDTO = messageService.getMessages(senderDTO, recipientDTO);
+
         assertEquals(1, resultMessagesDTO.size());
         assertEquals("Hello!", resultMessagesDTO.get(0).getText());
     }

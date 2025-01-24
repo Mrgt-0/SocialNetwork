@@ -19,40 +19,21 @@ import java.util.stream.Collectors;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
-    private UserRepository userRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
+    private UserService userService;
 
     @Override
-    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
-        logger.info("Поиск пользователя {} в репозитории", userName);
-        User user = userRepository.findByUserName(userName)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + userName));
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        UserDTO user = userService.findByUserName(username);
 
-        logger.info("Пользователь {} найден", user.getUserName());
-        return new MyUserDetails(convertToDTO(user));
+        if (user == null) {
+            throw new UsernameNotFoundException("Пользователь не найден");
+        }
+        return new MyUserDetails(user);
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
         return user.getRole().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                 .collect(Collectors.toList());
-    }
-
-    private UserDTO convertToDTO(User user) {
-        if (user == null)
-            return null;
-
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUserId(user.getUserId());
-        userDTO.setUserName(user.getUserName());
-        userDTO.setPassword(user.getPassword());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setFirstName(user.getFirstName());
-        userDTO.setLastName(user.getLastName());
-        userDTO.setBirthdate(user.getBirthdate());
-        userDTO.setProfilePicture(user.getProfilePicture());
-        userDTO.setRole(user.getRole());
-        return userDTO;
     }
 }

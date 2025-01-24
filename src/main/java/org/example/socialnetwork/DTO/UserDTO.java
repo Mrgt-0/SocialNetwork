@@ -3,7 +3,6 @@ package org.example.socialnetwork.DTO;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Set;
@@ -30,17 +29,13 @@ public class UserDTO {
 
     public UserDTO() {}
 
-    public UserDTO(Long userId, String userName, String firstName, String lastName, String password, String email, LocalDate birthdate, String profilePicture, Set<String> role){
-        this.userId=userId;
+    public UserDTO(String userName, String email, String firstName, String lastName){
         this.userName = userName;
+        this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.password = password;
-        this.email = email;
-        this.birthdate = birthdate;
-        this.profilePicture = profilePicture;
-        this.role = role;
     }
+
     public Long getUserId() { return userId; }
 
     public void setUserId(Long userId) { this.userId=userId; }

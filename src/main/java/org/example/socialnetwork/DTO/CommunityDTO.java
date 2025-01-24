@@ -12,11 +12,8 @@ public class CommunityDTO {
 
     public CommunityDTO() {}
 
-    public CommunityDTO(String communityName, String description, LocalDateTime created_at, User admin){
+    public CommunityDTO(String communityName){
         this.communityName=communityName;
-        this.description=description;
-        this.created_at=created_at;
-        this.admin=admin;
     }
 
     public Long getId() { return id; }

@@ -2,6 +2,7 @@ package org.example.socialnetwork.DTO;
 
 import org.example.socialnetwork.Model.User;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class PostDTO {
     private Long id;
@@ -12,6 +13,12 @@ public class PostDTO {
     private String text;
 
     public PostDTO() {}
+
+    public PostDTO(String text, String image){
+        this.text=text;
+        this.image=image;
+        this.updated_at = LocalDateTime.now();
+    }
 
     public Long getPostId() { return id; }
 
@@ -42,4 +49,18 @@ public class PostDTO {
     public LocalDateTime getUpdated_at() { return updated_at; }
 
     public void setUpdated_at(LocalDateTime updated_at) { this.updated_at = updated_at; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PostDTO)) return false;
+        PostDTO postDTO = (PostDTO) o;
+        return Objects.equals(text, postDTO.text) &&
+                Objects.equals(image, postDTO.image);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(text, image);
+    }
 }

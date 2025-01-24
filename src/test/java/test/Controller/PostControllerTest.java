@@ -1,28 +1,25 @@
 package test.Controller;
-
 import org.example.socialnetwork.Controller.PostController;
 import org.example.socialnetwork.DTO.PostDTO;
-import org.example.socialnetwork.DTO.UserDTO;
-import org.example.socialnetwork.Model.Post;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.multipart.MultipartFile;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+
+@ExtendWith(MockitoExtension.class)
 public class PostControllerTest {
     @InjectMocks
     private PostController postController;
@@ -31,62 +28,43 @@ public class PostControllerTest {
     private PostService postService;
 
     @Mock
-    private Model model;
-
-    @Mock
-    private BindingResult bindingResult;
-
-    @Mock
     private RedirectAttributes redirectAttributes;
 
-    @Mock
-    private MultipartFile file;
+    private PostDTO post;
+    private String postText;
+    private String imageUrl;
 
     @BeforeEach
-    public void setUp() {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    void testShowAllPosts() {
-        List<PostDTO> posts = new ArrayList<>();
-        posts.add(new PostDTO());
-        when(postService.getAllPosts()).thenReturn(posts);
-
-        String viewName = String.valueOf(postController.showAllPosts());
-        assertEquals("allPosts", viewName);
-        verify(model).addAttribute("posts", posts);
-        for (PostDTO post : posts) {
-            assertNotNull(post.getText());
-        }
-    }
-
-    @Test
-    void testPublicationPostWithFile() throws IOException {
+        postText = "Это тестовый пост.";
+        imageUrl = "http://example.com/testImage.jpg";
         PostDTO post = new PostDTO();
-        post.setText("Test post");
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getOriginalFilename()).thenReturn("test.png");
-
-        String result = String.valueOf(postController.publicationPost(post, file, redirectAttributes));
-
-        assertEquals("redirect:/posts/allPosts", result);
-        verify(postService).publicationPost(post);
-        verify(redirectAttributes).addFlashAttribute("successMessage", "Пост опубликован успешно!");
-        verify(file).transferTo(any(File.class));
+        post.setText(postText);
+        post.setImage(imageUrl);
+        post.setUpdated_at(LocalDateTime.now());
     }
 
     @Test
-    void testPublicationPostWithEmptyFile() {
-        PostDTO post = new PostDTO();
+    public void testPublicationPost() {
+        ResponseEntity<String> response = postController.publicationPost(postText, imageUrl, redirectAttributes);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Пост опубликован успешно!", response.getBody());
+        PostDTO expectedPost = new PostDTO(postText, imageUrl);
+        verify(postService, times(1)).publicationPost(expectedPost);
+        verify(redirectAttributes, times(1)).addFlashAttribute("successMessage", "Пост опубликован успешно!");
+    }
 
-        when(file.isEmpty()).thenReturn(true);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            postController.publicationPost(post, file, redirectAttributes);
-        });
-
-        assertEquals("Загруженный файл пуст", exception.getMessage());
-        verify(postService, never()).publicationPost(any());
+    @Test
+    public void testShowAllPosts() {
+        PostDTO post1 = new PostDTO();
+        post1.setText("Первый пост");
+        PostDTO post2 = new PostDTO();
+        post2.setText("Второй пост");
+        when(postService.getAllPosts()).thenReturn(Arrays.asList(post1, post2));
+        ResponseEntity<List<PostDTO>> response = postController.showAllPosts();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(2, response.getBody().size());
+        verify(postService, times(1)).getAllPosts();
     }
 }

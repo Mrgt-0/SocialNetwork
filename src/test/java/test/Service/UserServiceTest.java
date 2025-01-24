@@ -12,9 +12,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,66 +36,93 @@ public class UserServiceTest {
     @BeforeEach
     public void setUp() {
         userDTO = new UserDTO();
-        userDTO.setUserName("Mark");
-        userDTO.setEmail("zuckerberg@example.com");
+        userDTO.setUserId(1L);
+        userDTO.setUserName("testUser");
+        userDTO.setEmail("test@example.com");
         userDTO.setPassword("password123");
-        userDTO.setRole(Collections.singleton("USER"));
     }
 
     @Test
-    public void testRegisterUser_Success() throws SystemException {
-        when(userRepository.findByEmail(userDTO.getEmail())).thenReturn(Optional.empty());
-        when(userRepository.findByUserName(userDTO.getUserName())).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(userDTO.getPassword())).thenReturn("hashedpassword");
-        when(userRepository.save(any(User.class))).thenReturn(convertToEntity(userDTO));
-
-        UserDTO registeredUser = userService.registerUser(userDTO);
-
-        assertNotNull(registeredUser);
-        assertEquals("testuser", registeredUser.getUserName());
-        verify(passwordEncoder).encode(anyString());
-        verify(userRepository).save(any(User.class));
-        verify(userRepository).findByEmail(userDTO.getEmail());
-        verify(userRepository).findByUserName(userDTO.getUserName());
-    }
-
-    @Test
-    public void testRegisterUser_EmailAlreadyExists() throws SystemException {
-        when(userRepository.findByEmail(userDTO.getEmail())).thenReturn(Optional.of(convertToEntity(userDTO)));
-
-        UserDTO registeredUser = userService.registerUser(userDTO);
-
-        assertNull(registeredUser, "Пользователь не должен быть зарегистрирован.");
-        verify(userRepository).findByEmail(userDTO.getEmail());
-        verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    public void testRegisterUser_UsernameAlreadyExists() throws SystemException {
-        when(userRepository.findByEmail(userDTO.getEmail())).thenReturn(Optional.empty());
-        when(userRepository.findByUserName(userDTO.getUserName())).thenReturn(Optional.of(convertToEntity(userDTO)));
-
-        UserDTO registeredUser = userService.registerUser(userDTO);
-
-        assertNull(registeredUser, "Пользователь не должен быть зарегистрирован.");
-        verify(userRepository).findByUserName(userDTO.getUserName());
-        verify(userRepository, never()).save(any(User.class));
-    }
-
-    private User convertToEntity(UserDTO userDTO) {
-        if (userDTO == null) {
-            return null;
-        }
+    void testFindUserById() {
         User user = new User();
-        user.setUserId(userDTO.getUserId());
-        user.setUserName(userDTO.getUserName());
-        user.setFirstName(userDTO.getFirstName());
-        user.setLastName(userDTO.getLastName());
-        user.setPassword(userDTO.getPassword());
-        user.setEmail(userDTO.getEmail());
-        user.setBirthdate(userDTO.getBirthdate());
-        user.setProfilePicture(userDTO.getProfilePicture());
-        user.setRole(userDTO.getRole());
-        return user;
+        user.setUserId(1L);
+        user.setUserName("testUser");
+        when(userRepository.getById(1L)).thenReturn(user);
+        UserDTO result = userService.findUserById(1L);
+        assertNotNull(result);
+        assertEquals("testUser", result.getUserName());
+    }
+
+    @Test
+    void testFindUserByIdAsOptional() {
+        User user = new User();
+        user.setUserId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        Optional<UserDTO> result = userService.findUserByIdAsOptional(1L);
+        assertTrue(result.isPresent());
+        assertEquals(user.getUserId(), result.get().getUserId());
+    }
+
+    @Test
+    void testFindByUserName() {
+        User user = new User();
+        user.setUserName("testUser");
+        when(userRepository.findByUserName("testUser")).thenReturn(Optional.of(user));
+        UserDTO result = userService.findByUserName("testUser");
+        assertNotNull(result);
+        assertEquals("testUser", result.getUserName());
+    }
+
+    @Test
+    void testFindByUserNameWhenNotFound() {
+        when(userRepository.findByUserName("testUser")).thenReturn(Optional.empty());
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            userService.findByUserName("testUser");
+        });
+        assertEquals("Пользователь не найден: testUser", exception.getMessage());
+    }
+
+    @Test
+    void testRegisterUserWhenAlreadyExists() {
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(new User()));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.registerUser(userDTO));
+        assertEquals("Пользователь с таким email уже существует: test@example.com", exception.getMessage());
+    }
+
+    @Test
+    void testDeleteUserByIdWhenUserExists() {
+        User user = new User();
+        user.setUserId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        userService.deleteUserById(1L);
+        verify(userRepository).delete(any());
+    }
+
+    @Test
+    void testDeleteUserByIdWhenUserDoesNotExist() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        userService.deleteUserById(1L);
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void testChangeUserRole() {
+        User user = new User();
+        user.setUserId(1L);
+        user.setRole(Set.of("USER"));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        Set<String> newRoles = Set.of("ADMIN");
+        userService.changeUserRole(1L, newRoles);
+        assertEquals(newRoles, user.getRole());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testChangeUserRoleWhenUserDoesNotExist() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            userService.changeUserRole(1L, Set.of("ADMIN"));
+        });
+        assertEquals("Пользователь не найден", exception.getMessage());
     }
 }

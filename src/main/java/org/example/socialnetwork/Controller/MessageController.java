@@ -30,29 +30,25 @@ public class MessageController {
     private UserRepository userRepository;
 
     @GetMapping("/messages")
-    public ResponseEntity<String> showMessages(@RequestParam(value = "recipient", required = false) String recipientUsername,
+    public ResponseEntity<?> showMessages(@RequestParam(value = "recipient", required = false) String recipientUsername,
                                Authentication authentication) {
         logger.info("Открытие формы чата.");
+
         if (recipientUsername == null || recipientUsername.isEmpty()) {
             logger.error("Параметр recipient не был передан.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Параметр recipient не был передан.");
+            return ResponseEntity.badRequest().body("Параметр recipient не был передан."); // Возвращаем 400
         }
-
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
         UserDTO currentUser = myUserDetails.getUser();
         UserDTO recipient = userService.findByUserName(recipientUsername);
 
         if (recipient == null) {
             logger.error("Пользователь '{}' не найден.", recipientUsername);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Пользователь не найден.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден.");
         }
-
-        logger.info("Пользователь '{}' найден.", recipient.getUserName());
         List<MessageDTO> messages = messageService.getMessages(currentUser, recipient);
-
-        return ResponseEntity.ok(messages.toString());
+        logger.info("Пользователь '{}' найден. Получение сообщений.", recipient.getUserName());
+        return ResponseEntity.ok(messages);
     }
 
     @GetMapping("/selectRecipient")
@@ -70,24 +66,22 @@ public class MessageController {
         UserDTO recipientDTO = userService.findByUserName(recipientUsername);
         if (recipientDTO == null) {
             logger.error("Не удалось отправить сообщение. Получатель '{}' не найден.", recipientUsername);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Получатель не найден.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Получатель не найден."); // Вернем 404
         }
 
         messageService.sendMessage(currentUserDTO, recipientDTO, content);
-        logger.info("Сообщение успешно отправлено от '{}' к '{}'.", currentUserDTO.getUserName(), recipientUsername);
+        logger.info("Сообщение '{}' успешно отправлено от '{}' к '{}'.", content, currentUserDTO.getUserName(), recipientUsername);
         return ResponseEntity.ok("Сообщение успешно отправлено.");
     }
 
     @GetMapping("/messages/{recipientId}")
-    public ResponseEntity<List<MessageDTO>> getMessages(@PathVariable Long recipientId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
+    public ResponseEntity<List<MessageDTO>> getMessages(@PathVariable Long recipientId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof MyUserDetails myUserDetails) {
             UserDTO currentUser = myUserDetails.getUser();
             UserDTO recipientUser = userService.findUserById(recipientId);
-            if (recipientUser == null)
+            if (recipientUser == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
 
             List<MessageDTO> messages = messageService.getMessages(currentUser, recipientUser);
             return ResponseEntity.ok(messages);

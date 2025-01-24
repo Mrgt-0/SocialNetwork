@@ -1,22 +1,17 @@
 package org.example.socialnetwork.Controller;
-
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.DTO.CommunityDTO;
 import org.example.socialnetwork.DTO.CommunityMemberDTO;
 import org.example.socialnetwork.DTO.UserDTO;
-import org.example.socialnetwork.Model.Community;
-import org.example.socialnetwork.Model.CommunityMember;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.CommunityService;
 import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -34,16 +29,16 @@ public class CommunityController {
                                                   @RequestParam("description") String description, @AuthenticationPrincipal UserDetails userDetails) {
         logger.info("Проверка данных о сообществе. Название: {}, Описание: {}, Администратор: {}", communityName, description, userDetails.getUsername());
         Long adminId = ((MyUserDetails) userDetails).getUserId();
-
         UserDTO admin = userService.findUserByIdAsOptional(adminId)
                 .orElseThrow(() -> {
                     logger.error("Администратор с ID {} не найден.", adminId);
                     return new RuntimeException("Администратор не найден");
                 });
-
         CommunityDTO community = communityService.createCommunity(communityName, description, admin);
         logger.info("Сообщество успешно создано: {}", community.getCommunityName());
-        return ResponseEntity.ok("Сообщество успешно создано.");
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Сообщество успешно создано.");
     }
 
     @GetMapping
@@ -69,10 +64,10 @@ public class CommunityController {
     }
 
     @PostMapping("/{communityId}/members")
-    public ResponseEntity<CommunityMemberDTO> getMembers(@PathVariable Long communityId) {
+    public ResponseEntity<List<CommunityMemberDTO>> getMembers(@PathVariable Long communityId) {
         logger.info("Получение участников сообщества с ID: {}", communityId);
-        List<CommunityMemberDTO> members = communityService.getMembers(communityId);
+        List<CommunityMemberDTO> members = communityService.getMembers(communityId); // предполагаем, что это возвращает List
         logger.info("Количество участников сообщества с ID {}: {}", communityId, members.size());
-        return ResponseEntity.ok((CommunityMemberDTO) members);
+        return ResponseEntity.ok(members);
     }
 }

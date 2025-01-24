@@ -3,18 +3,13 @@ package org.example.socialnetwork.Controller;
 import org.example.socialnetwork.Config.MyUserDetails;
 import org.example.socialnetwork.DTO.FriendDTO;
 import org.example.socialnetwork.DTO.UserDTO;
-import org.example.socialnetwork.Model.Friend;
-import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.FriendService;
 import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,20 +34,23 @@ public class FriendController {
 
     @PostMapping("/add")
     public ResponseEntity<String> addFriend(@RequestParam String userName, Authentication authentication) {
+        logger.info("Запрос на добавление в друзья для пользователя: {}", userName); // Логируем входящие данные
         MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
         UserDTO currentUser = userDetails.getUser();
+
         UserDTO friend = userService.findByUserName(userName);
+
+        if (friend == null) {
+            logger.warn("Пользователь не найден: {}", userName);
+            return ResponseEntity.badRequest().body("Ошибка: Пользователь не найден: " + userName);
+        }
 
         logger.info("Current user id: {}", currentUser.getUserId());
         logger.info("Friend user id: {}", friend.getUserId());
-        try {
-            friendService.addFriend(currentUser, friend);
-            logger.info("Пользователь успешно добавлен в друзья!");
-        } catch (RuntimeException e) {
-            logger.error("Не удалось добавить пользователя в друзья.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Не удалось добавить пользователя в друзья.");
-        }
+
+        friendService.addFriend(currentUser, friend);
+        logger.info("Пользователь {} успешно добавлен в друзья!", friend.getUserName());
+
         return ResponseEntity.ok("Пользователь успешно добавлен в друзья!");
     }
 }
