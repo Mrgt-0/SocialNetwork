@@ -9,6 +9,7 @@ import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,7 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/users")
 public class UserController {
     @Autowired
@@ -43,30 +44,46 @@ public class UserController {
     @GetMapping("/username/{username}")
     public ResponseEntity<UserDTO> getUserByUserName(@PathVariable("username") String userName) {
         Optional<UserDTO> user = Optional.ofNullable(userService.findByUserName(userName));
-        logger.info("Пользователь с именем: {} найде. ID: {}",userName,  user.get().getUserId());
+        logger.info("Пользователь с именем: {} найден. ID: {}",userName,  user.get().getUserId());
         return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/profile")
-    public String showProfileForm(Model model) {
-        logger.info("Форма профиля отображается.");
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUserName = auth.getName();
+    public ResponseEntity<UserDTO> showProfileForm() {
+        logger.info("Отображение формы профиля.");
+        String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
         UserDTO user = userService.findByUserName(currentUserName);
 
         if (user != null) {
-            model.addAttribute("user", user);
+            return ResponseEntity.ok(user);
         } else {
             logger.warn("Пользователь не найден: {}", currentUserName);
-            model.addAttribute("errorMessage", "Пользователь не найден.");
+            return ResponseEntity.notFound().build();
         }
-        return "profile";
     }
 
     @PostMapping("/profile")
-    public String updateProfile(@ModelAttribute UserDTO updatedUser) throws SystemException {
+    public ResponseEntity<String> updateProfile(@RequestBody UserDTO updatedUser) throws SystemException {
+        logger.info("Открыта форма редактирования данных профиля.");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if(auth == null || auth.getName() == null) {
+            logger.warn("Клиент не аутентифицирован.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Пользователь не аутентифицирован.");
+        }
+
         String currentUserName = auth.getName();
+        UserDTO currentUser = userService.findByUserName(currentUserName);
+
+        if (currentUser == null) {
+            logger.warn("Текущий пользователь не найден: {}", currentUserName);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Пользователь не найден.");
+        }
+
+        logger.info("Обновление данных пользователя: {}", currentUserName);
+
         userService.updateUser(currentUserName, updatedUser);
 
         if (!currentUserName.equals(updatedUser.getUserName())) {
@@ -74,7 +91,7 @@ public class UserController {
             Authentication newAuth = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(newAuth);
         }
-        logger.info("Данные о пользователе обновлены.");
-        return "redirect:/users/profile";
+        logger.info("Данные о пользователе {} обновлены.", updatedUser.getUserName());
+        return ResponseEntity.ok("Данные о пользователе обновлены.");
     }
 }

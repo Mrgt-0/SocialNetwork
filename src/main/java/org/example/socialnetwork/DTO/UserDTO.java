@@ -1,17 +1,30 @@
 package org.example.socialnetwork.DTO;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Set;
 
 public class UserDTO {
     private Long userId;
+    @NotEmpty(message = "Имя пользователя не должно быть пустым")
     private String userName;
     private String firstName;
     private String lastName;
+
+    @NotEmpty(message = "Пароль не должен быть пустым")
+    @Size(min = 8, message = "Пароль должен содержать как минимум 8 символов")
     private String password;
+
+    @NotEmpty(message = "Email не должен быть пустым")
+    @Email(message = "Некорректный формат email")
     private String email;
+
     private LocalDate birthdate;
+
     private String profilePicture;
     private Set<String> role;
 

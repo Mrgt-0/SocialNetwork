@@ -13,10 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,16 +24,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private static final Logger logger = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
+    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+        logger.info("Поиск пользователя {} в репозитории", userName);
+        User user = userRepository.findByUserName(userName)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + userName));
 
-        return new org.springframework.security.core.userdetails.User(user.getUserName(), user.getPassword(), getAuthorities(user));
+        logger.info("Пользователь {} найден", user.getUserName());
+        return new MyUserDetails(convertToDTO(user));
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
-        return user.getRole().stream() // Возможно, user.getRoles() возвращает коллекцию строк или других объектов.
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())) // Преобразование в требуемый формат.
+        return user.getRole().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                 .collect(Collectors.toList());
     }
 

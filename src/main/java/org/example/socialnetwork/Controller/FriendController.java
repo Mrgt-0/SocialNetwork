@@ -10,17 +10,16 @@ import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/friends")
 public class FriendController {
     @Autowired
@@ -31,16 +30,15 @@ public class FriendController {
     private static final Logger logger = LoggerFactory.getLogger(FriendController.class);
 
     @GetMapping
-    public String showFriends(Model model, Authentication authentication) {
+    public ResponseEntity<List<FriendDTO>> showFriends(Authentication authentication) {
         MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
         UserDTO currentUser = userDetails.getUser();
         List<FriendDTO> friends = friendService.getFriends(currentUser);
-        model.addAttribute("friends", friends);
-        return "friends";
+        return ResponseEntity.ok(friends);
     }
 
     @PostMapping("/add")
-    public String addFriend(@RequestParam String userName, Model model, Authentication authentication) {
+    public ResponseEntity<String> addFriend(@RequestParam String userName, Authentication authentication) {
         MyUserDetails userDetails = (MyUserDetails) authentication.getPrincipal();
         UserDTO currentUser = userDetails.getUser();
         UserDTO friend = userService.findByUserName(userName);
@@ -49,14 +47,12 @@ public class FriendController {
         logger.info("Friend user id: {}", friend.getUserId());
         try {
             friendService.addFriend(currentUser, friend);
-            model.addAttribute("successMessage", "Друг добавлен успешно!");
+            logger.info("Пользователь успешно добавлен в друзья!");
         } catch (RuntimeException e) {
-            model.addAttribute("errorMessage", e.getMessage());
+            logger.error("Не удалось добавить пользователя в друзья.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Не удалось добавить пользователя в друзья.");
         }
-
-        List<FriendDTO> friends = friendService.getFriends(currentUser);
-        model.addAttribute("friends", friends);
-
-        return "friends";
+        return ResponseEntity.ok("Пользователь успешно добавлен в друзья!");
     }
 }

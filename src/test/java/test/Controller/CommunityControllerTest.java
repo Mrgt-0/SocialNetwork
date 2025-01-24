@@ -59,7 +59,7 @@ public class CommunityControllerTest {
         when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.of(admin));
         when(communityService.createCommunity(any(String.class), any(String.class), any(UserDTO.class))).thenReturn(community);
 
-        String result = communityController.createCommunity("Test Community", "Test Description", userDetails);
+        String result = String.valueOf(communityController.createCommunity("Test Community", "Test Description", userDetails));
 
         assertEquals("redirect:/communities", result);
         verify(userService, times(1)).findUserByIdAsOptional(1L);
@@ -70,7 +70,7 @@ public class CommunityControllerTest {
     public void testGetAllCommunities() {
         when(communityService.getAllCommunities()).thenReturn(Collections.singletonList(new CommunityDTO()));
 
-        String result = communityController.getAllCommunities(model);
+        String result = String.valueOf(communityController.getAllCommunities());
 
         assertEquals("communities", result);
         verify(model, times(1)).addAttribute("communities", Collections.singletonList(new Community()));
@@ -85,7 +85,7 @@ public class CommunityControllerTest {
         when(userService.findUserByIdAsOptional(1L)).thenReturn(Optional.of(admin));
         when(communityService.joinCommunity(1L, admin)).thenReturn(new CommunityMemberDTO());
 
-        String result = communityController.joinCommunity(1L, userDetails);
+        String result = String.valueOf(communityController.joinCommunity(1L, userDetails));
 
         assertEquals("redirect:/communities", result);
         verify(communityService, times(1)).joinCommunity(1L, admin);
@@ -97,7 +97,7 @@ public class CommunityControllerTest {
         community.setId(1L);
         when(communityService.getMembers(1L)).thenReturn(Collections.singletonList(new CommunityMemberDTO()));
 
-        List<CommunityMemberDTO> members = communityController.getMembers(1L);
+        List<CommunityMemberDTO> members = (List<CommunityMemberDTO>) communityController.getMembers(1L);
 
         assertNotNull(members);
         assertEquals(1, members.size());

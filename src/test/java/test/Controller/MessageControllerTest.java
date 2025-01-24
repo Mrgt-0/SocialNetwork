@@ -64,7 +64,7 @@ public class MessageControllerTest {
         when(userService.findUserByUserNameAsOptional("recipient")).thenReturn(Optional.of(recipient));
         when(messageService.getMessages(currentUser, recipient)).thenReturn(List.of(message));
 
-        String viewName = messageController.showMessages("recipient", model, authentication);
+        String viewName = String.valueOf(messageController.showMessages("recipient", authentication));
 
         assertEquals("messages", viewName);
         verify(model).addAttribute("messages", List.of(message));
@@ -76,7 +76,7 @@ public class MessageControllerTest {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
         when(userService.findUserByUserNameAsOptional("nonexistent")).thenReturn(Optional.empty());
 
-        String viewName = messageController.showMessages("nonexistent", model, authentication);
+        String viewName = String.valueOf(messageController.showMessages("nonexistent", authentication));
 
         assertEquals("error", viewName);
         verify(model).addAttribute("error", "Пользователь не найден.");
@@ -84,7 +84,7 @@ public class MessageControllerTest {
 
     @Test
     public void testShowMessages_NoRecipient() {
-        String viewName = messageController.showMessages(null, model, authentication);
+        String viewName = String.valueOf(messageController.showMessages(null, authentication));
 
         assertEquals("error", viewName);
         verify(model).addAttribute("error", "Параметр recipient не был передан.");
@@ -95,7 +95,7 @@ public class MessageControllerTest {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
         when(userService.findUserByUserNameAsOptional(recipient.getUserName())).thenReturn(Optional.of(recipient));
 
-        String viewName = messageController.sendMessage(recipient.getUserName(), "Hello", authentication);
+        String viewName = String.valueOf(messageController.sendMessage(recipient.getUserName(), "Hello", authentication));
 
         assertEquals("redirect:/messages?recipient=recipient", viewName);
         verify(messageService).saveMessage(any(MessageDTO.class));
@@ -106,7 +106,7 @@ public class MessageControllerTest {
         when(authentication.getPrincipal()).thenReturn(new MyUserDetails(currentUser));
         when(userService.findUserByUserNameAsOptional(recipient.getUserName())).thenReturn(Optional.empty());
 
-        String viewName = messageController.sendMessage(recipient.getUserName(), "Hello", authentication);
+        String viewName = String.valueOf(messageController.sendMessage(recipient.getUserName(), "Hello", authentication));
 
         assertEquals("error", viewName);
     }

@@ -12,6 +12,7 @@ import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/communities")
 public class CommunityController {
     @Autowired
@@ -29,7 +30,8 @@ public class CommunityController {
     private static final Logger logger = LoggerFactory.getLogger(CommunityController.class);
 
     @PostMapping
-    public String createCommunity(@RequestParam("community_name") String communityName, @RequestParam("description") String description, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<String> createCommunity(@RequestParam("community_name") String communityName,
+                                                  @RequestParam("description") String description, @AuthenticationPrincipal UserDetails userDetails) {
         logger.info("Проверка данных о сообществе. Название: {}, Описание: {}, Администратор: {}", communityName, description, userDetails.getUsername());
         Long adminId = ((MyUserDetails) userDetails).getUserId();
 
@@ -41,20 +43,19 @@ public class CommunityController {
 
         CommunityDTO community = communityService.createCommunity(communityName, description, admin);
         logger.info("Сообщество успешно создано: {}", community.getCommunityName());
-        return "redirect:/communities";
+        return ResponseEntity.ok("Сообщество успешно создано.");
     }
 
     @GetMapping
-    public String getAllCommunities(Model model) {
+    public ResponseEntity<List<CommunityDTO>> getAllCommunities() {
         logger.info("Получение списка всех сообществ.");
         List<CommunityDTO> communities = communityService.getAllCommunities();
-        model.addAttribute("communities", communities);
         logger.info("Количество сообществ получено: {}", communities.size());
-        return "communities";
+        return ResponseEntity.ok(communities);
     }
 
     @PostMapping("/{communityId}/join")
-    public String  joinCommunity(@PathVariable Long communityId, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<String>  joinCommunity(@PathVariable Long communityId, @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = ((MyUserDetails) userDetails).getUserId();
         UserDTO user = userService.findUserByIdAsOptional(userId)
                 .orElseThrow(() -> {
@@ -64,14 +65,14 @@ public class CommunityController {
 
         communityService.joinCommunity(communityId, user);
         logger.info("Пользователь {} успешно присоединился к сообществу с ID {}.", user.getUserName(), communityId);
-        return "redirect:/communities";
+        return ResponseEntity.ok("Вы успешно присоединились к сообществу!");
     }
 
-    @GetMapping("/{communityId}/members")
-    public List<CommunityMemberDTO> getMembers(@PathVariable Long communityId) {
+    @PostMapping("/{communityId}/members")
+    public ResponseEntity<CommunityMemberDTO> getMembers(@PathVariable Long communityId) {
         logger.info("Получение участников сообщества с ID: {}", communityId);
         List<CommunityMemberDTO> members = communityService.getMembers(communityId);
         logger.info("Количество участников сообщества с ID {}: {}", communityId, members.size());
-        return members;
+        return ResponseEntity.ok((CommunityMemberDTO) members);
     }
 }

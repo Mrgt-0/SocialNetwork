@@ -26,11 +26,9 @@ public class User {
     private String lastName;
 
     @Column(name ="password_hash", nullable = false)
-    @Size(min = 8, message = "Пароль должен содержать минимум 8 символов")
     private String password;
 
     @Column(name ="email", nullable = false)
-    @Email(message = "Некорректный формат email")
     private String email;
 
     @Column(name ="birthdate", nullable = true)

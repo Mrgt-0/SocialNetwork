@@ -48,19 +48,12 @@ public class PostControllerTest {
     }
 
     @Test
-    void testShowPostCreateForm() {
-        String viewName = postController.showPostCreateForm(model);
-        assertEquals("createPost", viewName);
-        verify(model).addAttribute("post", new PostDTO());
-    }
-
-    @Test
     void testShowAllPosts() {
         List<PostDTO> posts = new ArrayList<>();
         posts.add(new PostDTO());
         when(postService.getAllPosts()).thenReturn(posts);
 
-        String viewName = postController.showAllPosts(model);
+        String viewName = String.valueOf(postController.showAllPosts());
         assertEquals("allPosts", viewName);
         verify(model).addAttribute("posts", posts);
         for (PostDTO post : posts) {
@@ -75,7 +68,7 @@ public class PostControllerTest {
         when(file.isEmpty()).thenReturn(false);
         when(file.getOriginalFilename()).thenReturn("test.png");
 
-        String result = postController.publicationPost(post, bindingResult, file, redirectAttributes);
+        String result = String.valueOf(postController.publicationPost(post, file, redirectAttributes));
 
         assertEquals("redirect:/posts/allPosts", result);
         verify(postService).publicationPost(post);
@@ -90,7 +83,7 @@ public class PostControllerTest {
         when(file.isEmpty()).thenReturn(true);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            postController.publicationPost(post, bindingResult, file, redirectAttributes);
+            postController.publicationPost(post, file, redirectAttributes);
         });
 
         assertEquals("Загруженный файл пуст", exception.getMessage());

@@ -6,13 +6,11 @@ import org.example.socialnetwork.Service.PostService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -20,7 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/posts")
 public class PostController {
     @Autowired
@@ -29,10 +27,9 @@ public class PostController {
     private static final Logger logger = LoggerFactory.getLogger(PostController.class);
 
     @RequestMapping("/createPost")
-    public String publicationPost(@ModelAttribute("post") PostDTO post,
-                                  BindingResult bindingResult,
-                                  @RequestParam("image") MultipartFile file,
-                                  RedirectAttributes redirectAttributes) {
+    public ResponseEntity<String> publicationPost(@ModelAttribute("post") PostDTO post,
+                                                  @RequestParam("image") MultipartFile file,
+                                                  RedirectAttributes redirectAttributes) {
         logger.info("текст поста: {}", post.getText());
         logger.info("файл изображения: {}", file.getOriginalFilename());
 //
@@ -42,25 +39,23 @@ public class PostController {
 //        }
         postService.publicationPost(post);
         redirectAttributes.addFlashAttribute("successMessage", "Пост опубликован успешно!");
-        return "redirect:/posts/allPosts";
+        return ResponseEntity.ok("Пост опубликован успешно!");
     }
 
-    @GetMapping("/createPost")
-    public String showPostCreateForm(Model model) {
-        model.addAttribute("post", new PostDTO());
-        logger.info("Отображение формы создания постов.");
-        return "createPost";
-    }
+//    @GetMapping("/createPost")
+//    public ResponseEntity<String> showPostCreateForm() {
+//        logger.info("Отображение формы создания постов.");
+//        return "createPost";
+//    }
 
     @GetMapping("/allPosts")
-    public String showAllPosts(Model model) {
+    public ResponseEntity<List<PostDTO>> showAllPosts() {
         List<PostDTO> posts = postService.getAllPosts();
-        model.addAttribute("posts", posts);
         for (PostDTO post : posts)
             logger.info("Пост: {}, Автор: {}", post.getText(), post.getUser() != null ? post.getUser().getUserName() : "Не указано");
 
         logger.info("Отображение страницы постов.");
-        return "allPosts";
+        return ResponseEntity.ok(posts);
     }
 
 //    public String saveImage(MultipartFile file) {
