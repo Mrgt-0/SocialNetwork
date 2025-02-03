@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/", "/auth/register", "/auth/login", "/auth/**").permitAll()
                         .requestMatchers("/messages", "/selectRecipient", "/send-message", "/users/profile", "/posts/", "/friends/", "/communities/**").authenticated()
-                        .requestMatchers("/admin/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

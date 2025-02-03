@@ -91,6 +91,10 @@ public class CommunityService {
         logger.info("Группа с id {} успешно удалены.", communityId);
     }
 
+    public void deleteCommunityMembersByCommunityId(Long communityId){
+        communityMemberRepository.deleteByCommunityId(communityId);
+    }
+
     private User convertToEntity(UserDTO userDTO) {
         if (userDTO == null) {
             return null;
