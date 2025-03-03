@@ -7,6 +7,7 @@ import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.Banner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,11 +15,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
-@RestController
+@Controller
 @RequestMapping("/users")
 public class UserController {
     @Autowired
@@ -49,21 +52,22 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<UserDTO> showProfileForm() {
+    public String showProfileForm(Model model) {
         logger.info("Отображение формы профиля.");
         String currentUserName = SecurityContextHolder.getContext().getAuthentication().getName();
         UserDTO user = userService.findByUserName(currentUserName);
 
         if (user != null) {
-            return ResponseEntity.ok(user);
+            model.addAttribute("user", user);
         } else {
             logger.warn("Пользователь не найден: {}", currentUserName);
-            return ResponseEntity.notFound().build();
+            model.addAttribute("errorMessage", "Пользователь не найден.");
         }
+        return "profile";
     }
 
     @PostMapping("/profile")
-    public ResponseEntity<String> updateProfile(@RequestParam("userName") String userName,
+    public String updateProfile(@RequestParam("userName") String userName,
                                                 @RequestParam("email") String email,
                                                 @RequestParam("firstName") String firstName,
                                                 @RequestParam("lastName") String lastName) throws SystemException {
@@ -72,7 +76,7 @@ public class UserController {
 
         if (auth == null || auth.getName() == null) {
             logger.warn("Клиент не аутентифицирован.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Пользователь не аутентифицирован.");
         }
 
@@ -81,7 +85,7 @@ public class UserController {
 
         if (currentUser == null) {
             logger.warn("Текущий пользователь не найден: {}", currentUserName);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Пользователь не найден.");
         }
         UserDTO updatedUser = new UserDTO(userName, email, firstName, lastName);
@@ -95,6 +99,6 @@ public class UserController {
             SecurityContextHolder.getContext().setAuthentication(newAuth);
         }
         logger.info("Данные о пользователе {} обновлены.", updatedUser.getUserName());
-        return ResponseEntity.ok("Данные о пользователе обновлены.");
+        return "redirect:/users/profile";
     }
 }

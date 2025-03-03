@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,16 +29,16 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/", "/auth/register", "/auth/login", "/auth/**").permitAll()
-                        .requestMatchers("/messages", "/selectRecipient", "/send-message", "/users/profile", "/posts/", "/friends/", "/communities/**").authenticated()
-                        .requestMatchers("/admin/**").permitAll()
+                        .requestMatchers("/", "/auth/register", "/auth/login", "/error").permitAll()
+                        .requestMatchers("/chat", "/selectRecipient", "/send-message", "/users/profile", "/posts/", "/friends/", "/communities/**").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation().migrateSession()
                 )
-                .logout(logout -> logout.permitAll())
+                .logout(LogoutConfigurer::permitAll)
                 .addFilterBefore(customAuthenticationFilter(authenticationManager(http)), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -50,14 +51,6 @@ public class SecurityConfig {
         authenticationManagerBuilder.userDetailsService(userDetailsService())
                 .passwordEncoder(passwordEncoder());
         return authenticationManagerBuilder.build();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService());
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
     }
 
     @Bean

@@ -14,10 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@RestController
+@Controller
 public class MessageController {
     @Autowired
     private MessageService messageService;
@@ -29,36 +31,42 @@ public class MessageController {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/messages")
-    public ResponseEntity<?> showMessages(@RequestParam(value = "recipient", required = false) String recipientUsername,
+    @GetMapping("/chat")
+    public String showMessages(@RequestParam(value = "recipient", required = false) String recipientUsername,
+                               Model model,
                                Authentication authentication) {
         logger.info("Открытие формы чата.");
 
         if (recipientUsername == null || recipientUsername.isEmpty()) {
+            model.addAttribute("error", "Параметр recipient не был передан.");
             logger.error("Параметр recipient не был передан.");
-            return ResponseEntity.badRequest().body("Параметр recipient не был передан."); // Возвращаем 400
+            return null;
         }
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
         UserDTO currentUser = myUserDetails.getUser();
         UserDTO recipient = userService.findByUserName(recipientUsername);
 
         if (recipient == null) {
+            model.addAttribute("error", "Пользователь не найден.");
             logger.error("Пользователь '{}' не найден.", recipientUsername);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден.");
+            return null;
         }
         List<MessageDTO> messages = messageService.getMessages(currentUser, recipient);
+        model.addAttribute("messages", messages);
+        model.addAttribute("recipient", recipient);
         logger.info("Пользователь '{}' найден. Получение сообщений.", recipient.getUserName());
-        return ResponseEntity.ok(messages);
+        return "chat";
     }
 
     @GetMapping("/selectRecipient")
-    public ResponseEntity<List<User>> selectRecipient() {
+    public String selectRecipient(Model model) {
         List<User> users = userRepository.findAll();
-        return ResponseEntity.ok(users);
+        model.addAttribute("users", users);
+        return "selectRecipient";
     }
 
     @PostMapping("/send-message")
-    public ResponseEntity<String> sendMessage(@RequestParam("recipient") String recipientUsername,
+    public String sendMessage(@RequestParam("recipient") String recipientUsername,
                               @RequestParam("content") String content, Authentication authentication) {
         MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
         UserDTO currentUserDTO = myUserDetails.getUser();
@@ -66,15 +74,16 @@ public class MessageController {
         UserDTO recipientDTO = userService.findByUserName(recipientUsername);
         if (recipientDTO == null) {
             logger.error("Не удалось отправить сообщение. Получатель '{}' не найден.", recipientUsername);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Получатель не найден."); // Вернем 404
+            return null;
+            //return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Получатель не найден.");
         }
 
         messageService.sendMessage(currentUserDTO, recipientDTO, content);
         logger.info("Сообщение '{}' успешно отправлено от '{}' к '{}'.", content, currentUserDTO.getUserName(), recipientUsername);
-        return ResponseEntity.ok("Сообщение успешно отправлено.");
+        return "redirect:/chat?recipient=" + recipientUsername;
     }
 
-    @GetMapping("/messages/{recipientId}")
+    @GetMapping("/chat/{recipientId}")
     public ResponseEntity<List<MessageDTO>> getMessages(@PathVariable Long recipientId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof MyUserDetails myUserDetails) {
             UserDTO currentUser = myUserDetails.getUser();

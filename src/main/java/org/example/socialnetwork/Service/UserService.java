@@ -74,7 +74,7 @@ public class UserService {
         userDTO.setPassword(encodedPassword);
 
         if (userDTO.getRole() == null || userDTO.getRole().isEmpty())
-            userDTO.setRole(Collections.singleton("ADMIN"));
+            userDTO.setRole(Collections.singleton("USER"));
 
         User registredUser = convertToEntity(userDTO);
         registredUser = userRepository.save(registredUser);

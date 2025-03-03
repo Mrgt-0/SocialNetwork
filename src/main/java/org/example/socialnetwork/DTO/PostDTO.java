@@ -7,14 +7,14 @@ import java.util.Objects;
 public class PostDTO {
     private Long id;
     private User user;
-    private String image;
+    private byte[] image;
     private LocalDateTime created_at;
     private LocalDateTime updated_at;
     private String text;
 
     public PostDTO() {}
 
-    public PostDTO(String text, String image){
+    public PostDTO(String text, byte[] image){
         this.text=text;
         this.image=image;
         this.updated_at = LocalDateTime.now();
@@ -38,9 +38,9 @@ public class PostDTO {
 
     public void setText(String text) { this.text = text; }
 
-    public String getImage() { return image; }
+    public byte[] getImage() { return image; }
 
-    public void setImage(String image) { this.image = image; }
+    public void setImage(byte[] image) { this.image = image; }
 
     public LocalDateTime getCreated_at() { return created_at; }
 

@@ -14,8 +14,8 @@ public class Post {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "image", nullable = true)
-    private String image;
+    @Column(name = "image", nullable = false)
+    private byte[] image;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime created_at;
@@ -28,7 +28,7 @@ public class Post {
 
     public Post() {}
 
-    public Post(User user, String text, String image, LocalDateTime created_at, LocalDateTime updated_at){
+    public Post(User user, String text, byte[] image, LocalDateTime created_at, LocalDateTime updated_at){
         this.user=user;
         this.image=image;
         this.created_at=created_at;
@@ -54,9 +54,9 @@ public class Post {
 
     public void setText(String text) { this.text = text; }
 
-    public String getImage() { return image; }
+    public byte[] getImage() { return image; }
 
-    public void setImage(String image) { this.image = image; }
+    public void setImage(byte[] image) { this.image = image; }
 
     public LocalDateTime getCreated_at() { return created_at; }
 

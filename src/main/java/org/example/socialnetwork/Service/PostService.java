@@ -37,37 +37,32 @@ public class PostService {
     }
 
     @Transactional
-    public Post publicationPost(PostDTO postDTO){
+    public Post publicationPost(Post post){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             UserDTO currentUser = userService.findByUserName(userDetails.getUsername());
-            postDTO.setUser(convertToEntity(currentUser));
+            post.setUser(convertToEntity(currentUser));
         } else {
             logger.warn("Пользователь не аутентифицирован, пост не будет опубликован.");
             throw new RuntimeException("Пользователь не аутентифицирован");
         }
 
-        postDTO.setCreated_at(LocalDateTime.now());
-        postDTO.setUpdated_at(LocalDateTime.now());
-        logger.info("Проверка полей перед сохранением: username = {}, text = {}, image = {}", postDTO.getUser().getUserName(), postDTO.getText(), postDTO.getImage());
-        Post publishedPost = postRepository.save(convertToEntity(postDTO));
+        post.setCreated_at(LocalDateTime.now());
+        post.setUpdated_at(LocalDateTime.now());
+        logger.info("Проверка полей перед сохранением: username = {}, text = {}, image = {}", post.getUser().getUserName(), post.getText(), post.getImage());
+        Post publishedPost = postRepository.save(post);
         logger.info("Пост успешно зарегистрирован.");
         return publishedPost;
     }
 
-    public List<PostDTO> getAllPosts() {
-        List<Post> posts = postRepository.findAll();
-        List<PostDTO> postDTOs = posts.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-
-        return postDTOs;
+    public List<Post> getAllPosts() {
+        return postRepository.findAll();
     }
 
     @Transactional
-    public PostDTO updatedPost(Long post_id, PostDTO updatedPost){
-        Post post1 = postRepository.findPostById(post_id)
+    public Post updatedPost(Long post_id, Post updatedPost){
+        return postRepository.findPostById(post_id)
                 .map(post->{
                     post.setText(updatedPost.getText());
                     post.setImage(updatedPost.getImage());
@@ -75,16 +70,15 @@ public class PostService {
                     return postRepository.save(post);
                 })
                 .orElseThrow(() -> new RuntimeException("Пост не найден."));
-        return convertToDTO(post1);
     }
 
     @Transactional
-    public void deletePostById(Long postId){
-        if (postId == null)
-            throw new IllegalArgumentException("ID поста не может быть null.");
-
-        postRepository.deleteById(postId);
-        logger.info("Пост с ID {} успешно удален.", postId);
+    public void deletePost(Post post){
+        if(post!=null){
+            postRepository.deleteById(post.getPostId());
+            logger.info("Пост успешно удален.");
+        }else
+            logger.error("Пост не найден.");
     }
 
     private PostDTO convertToDTO(Post post) {

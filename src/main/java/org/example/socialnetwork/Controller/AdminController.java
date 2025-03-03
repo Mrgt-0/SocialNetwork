@@ -26,6 +26,7 @@ public class AdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/change-role")
     public ResponseEntity<String> changeUserRole(@RequestParam("userId") Long userId,
                                                  @RequestParam("newRole") Set<String> newRole,
@@ -36,6 +37,7 @@ public class AdminController {
         return ResponseEntity.ok("Роль пользователя изменена успешно!");
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/delete-user")
     public ResponseEntity<String> deleteUser(@RequestParam("userId") Long userId,
                                              RedirectAttributes redirectAttributes) {
@@ -45,21 +47,24 @@ public class AdminController {
         return ResponseEntity.ok("Пользователь успешно удален!");
     }
 
-    @PostMapping("/delete-post")
-    public ResponseEntity<String> deletePost(@RequestParam("postId") Long postId,
-                                             RedirectAttributes redirectAttributes) {
-        postService.deletePostById(postId);
-        redirectAttributes.addFlashAttribute("success", "Пост успешно удален!");
-        logger.info("Пост с ID {} успешно удален.", postId);
-        return ResponseEntity.ok("Пост успешно удален!");
-    }
-
-    @PostMapping("/delete-community")
-    public ResponseEntity<String> deleteCommunity(@RequestParam("communityId") Long communityId,
-                                                  RedirectAttributes redirectAttributes) {
-        communityService.deleteCommunity(communityId);
-        redirectAttributes.addFlashAttribute("success", "Группа успешно удалена!");
-        logger.info("Группа с ID {} успешно удалена.", communityId);
-        return ResponseEntity.ok("Группа успешно удалена!");
-    }
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
+//    @PostMapping("/delete-post")
+//    public ResponseEntity<String> deletePost(@RequestParam("postId") Long postId,
+//                                             RedirectAttributes redirectAttributes) {
+//        postService.deletePost(postId);
+//        redirectAttributes.addFlashAttribute("success", "Пост успешно удален!");
+//        logger.info("Пост с ID {} успешно удален.", postId);
+//        return ResponseEntity.ok("Пост успешно удален!");
+//    }
+//
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
+//    @PostMapping("/delete-community")
+//    public ResponseEntity<String> deleteCommunity(@RequestParam("communityId") Long communityId,
+//                                                  RedirectAttributes redirectAttributes) {
+//        communityService.deleteCommunityMembersByCommunityId(communityId);
+//        communityService.deleteCommunity(communityId);
+//        redirectAttributes.addFlashAttribute("success", "Группа успешно удалена!");
+//        logger.info("Группа с ID {} успешно удалена.", communityId);
+//        return ResponseEntity.ok("Группа успешно удалена!");
+//    }
 }

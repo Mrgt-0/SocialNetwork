@@ -3,6 +3,7 @@ package org.example.socialnetwork.Controller;
 import jakarta.transaction.SystemException;
 import jakarta.validation.Valid;
 import org.example.socialnetwork.DTO.UserDTO;
+import org.example.socialnetwork.Model.User;
 import org.example.socialnetwork.Service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +13,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@Controller
 @RequestMapping("/auth")
 public class AuthController {
     private UserService userService;
@@ -40,23 +43,33 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/login")
+    public String showLoginForm(Model model) {
+        logger.info("Пользователь открывает страницу логина.");
+        model.addAttribute("user", new User());
+        return "login";
+    }
+
     @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8")
-    public ResponseEntity<String> login(@RequestParam String userName, @RequestParam String password) {
+    public String login(@RequestParam String userName, @RequestParam String password, Model model) {
         logger.info("Имя пользователя: {}", userName);
         logger.info("Пароль: {}", password);
 
         if (userName == null || userName.isEmpty()) {
             logger.error("Имя пользователя не указано!");
-            return ResponseEntity.badRequest().body("Имя пользователя не может быть пустым");
+            model.addAttribute("errorMessage", "Неверное имя пользователя или пароль.");
+            return "login";
         }
 
         if (password == null || password.isEmpty()) {
             logger.error("Пароль не был предоставлен!");
-            return ResponseEntity.badRequest().body("Пароль не может быть пустым");
+            model.addAttribute("errorMessage", "Пароль не может быть пустым");
+            return "login";
         }
 
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userName, password));
         logger.info("Пользователь {} успешно вошел в систему.", userName);
-        return ResponseEntity.ok("Аутентификация успешна!");
+        ResponseEntity.ok("Аутентификация успешна!");
+        return "redirect:/users/profile";
     }
 }
